@@ -4,6 +4,8 @@
 #include "clustercanvas.h"
 #include "def.h"
 
+#include <time.h>
+
 void printUsage();
 void showCluster(std::vector<ClusterItem*> items, std::vector<Agent*> agents);
 ClusterCanvas* canvas = 0;
@@ -11,6 +13,8 @@ ClusterCanvas* canvas = 0;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    std::srand(time(NULL));
+
     QStringList args = a.arguments();
     if (args.size() < 2) {
         printUsage();
@@ -45,12 +49,20 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
+/**
+ * @brief showCluster A simple wrapper for the ClusterCanvas::cluster function.
+ * @param items Vector of ClusterItems to show.
+ * @param agents Vector of Agents to show.
+ */
 void showCluster(std::vector<ClusterItem*> items, std::vector<Agent*> agents) {
     if (!canvas)
         return;
     canvas->cluster(items, agents);
 }
 
+/**
+ * @brief printUsage Prints program usage to stdout
+ */
 void printUsage() {
     printf("Usage: AgentCluster [iterations] <data.csv>\n");
     printf("\nWhere <data.csv> is a comma-separated list of input data, with two ");

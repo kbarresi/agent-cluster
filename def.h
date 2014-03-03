@@ -4,6 +4,9 @@
 #include <vector>
 #include <sstream>
 
+/**
+ * @brief The ClusterItem struct Simple structure for holding values pertinent to inputted data.
+ */
 struct ClusterItem {
     int group;
     double x;
@@ -16,6 +19,9 @@ struct ClusterItem {
     }
 };
 
+/**
+ * @brief The Agent struct Contains data representing a single agent.
+ */
 struct Agent {
     double x;
     double y;
@@ -32,14 +38,31 @@ struct Agent {
     }
 };
 
-typedef void (*ClusterVisualizer)(std::vector<ClusterItem*>);
 typedef void (*AgentClusterVisualizer)(std::vector<ClusterItem*>, std::vector<Agent*>);
+
+
+
+//Configuration parameters
+
+/* The swarm size compared to the data set size. For example, a value of 0.5 means that the swarm
+ * size will be half of the size of the given data set.
+ */
+static double SWARM_SIZE_FACTOR = 0.5;
+
 
 
 
 
 
 //UTIL FUNCTIONS
+
+/**
+ * @brief split Split an std::string into a vector of strings.
+ * @param s The string to split.
+ * @param delim The delimiting character.
+ * @param elems A string vector to write to.
+ * @return A vector of strings that the string was split into.
+ */
 static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
@@ -48,12 +71,28 @@ static std::vector<std::string> &split(const std::string &s, char delim, std::ve
     }
     return elems;
 }
+/**
+ * @brief split Split an std::string into a vector of strings.
+ * @param s The string to split.
+ * @param delim The delimiting character.
+ * @return A vector of strings that the string was split into.
+ */
 static std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, elems);
     return elems;
 }
 
+/**
+ * @brief randomDouble Generates a random double within a given range.
+ * @param min The bottom of the range.
+ * @param max The top of the range.
+ * @return The random double.
+ */
+static double randomDouble(double min, double max) {
+    double f = (double)rand() / RAND_MAX;
+    return min + f * (max - min);
+}
 
 
 #endif // DEF_H
