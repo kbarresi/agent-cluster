@@ -117,3 +117,73 @@ void AgentCluster::consolidationPhase() {
 void AgentCluster::assignmentPhase() {
 
 }
+
+
+/**
+ * @brief AgentCluster::updateRanges Update the effective and selection ranges of all agents.
+ * @details We follow a basic formula for the effective and selection ranges of agents as described
+ * in the original AgentCluster paper.
+ */
+void AgentCluster::updateRanges() {
+    for (int i = 0; i < m_agents.size(); i++) {
+        Agent *agent = m_agents[i];
+        (void)(agent);
+    }
+}
+
+/**
+ * @brief AgentCluster::updateHappiness Update the hapiness of all agents, as based on their current
+ * position.
+ */
+void AgentCluster::updateHappiness() {
+    for (int i = 0; i < m_agents.size(); i++) {
+        Agent* agent = m_agents[i];
+        (void)(agent);
+    }
+}
+
+/**
+ * @brief AgentCluster::moveTowards Moves the first agent towards the second one.
+ * @details If the new position results in lower happiness than the original position results in
+ * lower happiness than the original position, the agent will move back, and attempt to move to a
+ * different, random position within the entire data-space. If this new position is better than or
+ * equal to the original position in terms of happiness, it will stay there. Otherwise, it will
+ * stay in the original position.
+ * @param agentOne The agent being moved.
+ * @param agentTwo The agent who is being moved towards.
+ */
+void AgentCluster::moveTowards(Agent *agentOne, Agent *agentTwo) {
+    (void)(agentOne);
+    (void)(agentTwo);
+}
+
+
+/**
+ * @brief AgentCluster::closestAgent Finds the closest Agent, based on Euclidean distance.
+ * @param agent The Agent to find the closest neighbor for.
+ * @return The closest Agent to the given Agent.
+ */
+Agent* AgentCluster::closestAgent(Agent *agent) const {
+    return agent;
+}
+
+/**
+ * @brief AgentCluster::nearbyAgents Finds Agents within the given Agent's effective range.
+ * @param agent The Agent to find neighbors for.
+ * @return A vector of Agent objects within the Agent's effective range.
+ */
+std::vector<Agent*> AgentCluster::nearbyAgents(Agent *agent) const {
+    (void)(agent);
+    return std::vector<Agent*>();
+}
+
+/**
+ * @brief AgentCluster::calculateHappiness Calculates the happiness of the Agent at its given
+ * position, with a value between [0, 1].
+ * @param agent The Agent to calculate happiness for.
+ * @return Happiness value between [0, 1].
+ */
+double AgentCluster::calculateHappiness(Agent *agent) const {
+    (void)(agent);
+    return 0;
+}

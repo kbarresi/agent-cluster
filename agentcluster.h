@@ -30,12 +30,15 @@ private:
     void consolidationPhase();
     void assignmentPhase();
 
-
-    void calculateHappiness();
-    void calculateRanges();
-
-    Agent* closestAgent(Agent* agent);
+    void updateRanges();
+    void updateHappiness();
     void moveTowards(Agent* agentOne, Agent* agentTwo);
+
+
+    Agent* closestAgent(Agent* agent) const;
+    std::vector<Agent*> nearbyAgents(Agent* agent) const;
+    double calculateHappiness(Agent* agent) const;
+
 
 };
 
