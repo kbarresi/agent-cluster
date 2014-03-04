@@ -53,13 +53,14 @@ private:
     void moveRandomly(Agent* agent);
 
     Agent* bestAgentInRange(Agent* agent) const;
-    std::vector<Agent*> agentsWithinEffectiveRange(Agent* agent) const;
+    std::vector<Agent*> agentsWithinPersonalSpace(Agent* agent) const;
     double calculateHappiness(Agent* agent) const;
 
     double averageClusterDistance() const;
     inline double pointDistance(double x1, double x2, double y1, double y2) const;
 
     void sleep(int milliseconds);
+    inline bool nanTest(double x) { if (x != x) return false; else return true; }
 };
 
 #endif // AGENTCLUSTER_H

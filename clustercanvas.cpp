@@ -79,7 +79,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
     if (!isVisible()) {
         show();
-        QRectF boundingArea = QRectF(0, 0, 800, 600);
+        QRectF boundingArea =QRectF(0, 0, 800, 800);
         m_view->setSceneRect(boundingArea);
     }
 
@@ -124,24 +124,6 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
     qreal maxWidth =m_view->mapToScene(m_view->width(), m_view->width()).x();
     qreal maxHeight = m_view->mapToScene(m_view->height(), m_view->height()).x();
 
-    for (int i = 0; i < items->size(); i++) {
-        (*items)[i]->x = ((maxWidth - minWidth) * (items->at(i)->x - m_minX)) / (rangeX) + minWidth;
-        (*items)[i]->y = ((maxHeight - minHeight) * (items->at(i)->y - m_minY)) / (rangeY) + minHeight;
-    }
-    for (int i = 0; i < agents->size(); i++) {
-        Agent* agent = (*agents)[i];
-        if (agent->x < m_minX)
-            agent->x = m_minX;
-        else if (agent->x > m_maxX)
-            agent->x = m_maxX;
-        if (agent->y < m_minY)
-            agent->y = m_minY;
-        else if (agent->y > m_maxY)
-            agent->y = m_maxY;
-
-        agent->x = (((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX)) + minWidth;
-        agent->y = (((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY)) + minHeight;
-    }
 
     QBrush brush(Qt::blue);
     QPen pen(Qt::black, 1);
@@ -150,8 +132,10 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
         for (int i = 0; i < items->size(); i++) {
             QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
             ClusterItem* clusterItem = (*items)[i];
+            double pX = ((maxWidth - minWidth) * (clusterItem->x - m_minX)) / (rangeX) + minWidth;
+            double pY = ((maxHeight - minHeight) * (clusterItem->y - m_minY)) / (rangeY) + minHeight;
 
-            item->setRect(QRectF(clusterItem->x, clusterItem->y, 2.5, 2.5));
+            item->setRect(QRectF(pX, pY, 2.5, 2.5));
             item->setBrush(brush);
             item->setPen(pen);
             m_scene->addItem(item);
@@ -161,11 +145,15 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
     }
 
 
+    //Draw the agents...
     brush.setColor(Qt::red);
     for (int i = 0; i < agents->size(); i++) {
         QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
         Agent* agent = (*agents)[i];
-        item->setRect(agent->x, agent->y, 5, 5);
+        double pX = ((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth;
+        double pY = ((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY) + minHeight;
+
+        item->setRect(pX, pY, 2, 2);
         item->setBrush(brush);
         item->setPen(pen);
         m_scene->addItem(item);
@@ -173,4 +161,54 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
         m_agentItems.push_back(item);
     }
 
+    //Draw the effective range...
+    brush.setColor(Qt::transparent);
+    pen.setColor(Qt::blue);
+    pen.setStyle(Qt::DashLine);
+    for (int i = 0; i < agents->size(); i++) {
+        QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
+        Agent* agent = (*agents)[i];
+
+        double radius = agent->effectiveRange;
+        double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
+        double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+
+        double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
+        double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+
+        QPointF topLeft = QPointF(topLeftX, topLeftY);
+        QPointF bottomRight = QPointF(bottomRightX, bottomRightY);
+        QRectF ellipseRect(topLeft, bottomRight);
+
+
+        item->setRect(ellipseRect);
+        item->setBrush(brush);
+        item->setPen(pen);
+        m_scene->addItem(item);
+        item->show();
+        m_agentItems.push_back(item);
+    }
+
+    //Draw personal space....
+    pen.setColor(Qt::red);
+    for (int i = 0; i < agents->size(); i++) {
+        QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
+        Agent* agent = (*agents)[i];
+        double radius = agent->personalSpace;
+        double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
+        double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+
+        double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
+        double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+
+        QPointF topLeft = QPointF(topLeftX, topLeftY);
+        QPointF bottomRight = QPointF(bottomRightX, bottomRightY);
+        QRectF ellipseRect(topLeft, bottomRight);
+
+        item->setRect(ellipseRect);
+        item->setPen(pen);
+        m_scene->addItem(item);
+        item->show();
+        m_agentItems.push_back(item);
+    }
 }

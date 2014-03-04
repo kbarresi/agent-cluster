@@ -33,12 +33,13 @@ struct Agent {
     double happiness;
 
     double effectiveRange;
+    double personalSpace;
     double selectionRange;
 
     Agent() {
         x = y = 0;
         happiness = 0.0;
-        effectiveRange = selectionRange = 0.0;
+        effectiveRange = selectionRange = personalSpace = 0.0;
     }
 };
 
@@ -49,7 +50,7 @@ struct Agent {
 /* The swarm size compared to the data set size. For example, a value of 0.5 means that the swarm
  * size will be half of the size of the given data set.
  */
-static double SWARM_SIZE_FACTOR = 0.5;
+static double SWARM_SIZE_FACTOR = 0.25;
 
 
 /*
