@@ -2,7 +2,9 @@
 
 #include <iostream>
 #include <fstream>
-#include <QThread>
+#include <QMutex>
+
+#include <math.h>
 
 AgentCluster::AgentCluster(int iterations, QObject *parent)
     : QObject(parent)
@@ -27,9 +29,9 @@ AgentCluster::~AgentCluster() {
  * @return True for successful loading, false if there was an error.
  */
 bool AgentCluster::loadData(std::string dataSource) {
-    std::ifstream file(dataSource);
+    std::ifstream file(dataSource.c_str());
     if (!file.is_open()) {
-        printf("Error: unable to open file: %s\n\n", dataSource);
+        printf("Error: unable to open file: %s\n\n", dataSource.c_str());
         return false;
     }
 
@@ -70,7 +72,7 @@ void AgentCluster::start() {
     m_dataMinY = m_data[0]->y;
     m_dataMaxX = m_dataMinX;
     m_dataMaxY = m_dataMinY;
-    for (int i = 1; i < m_data.size(); i++) {
+    for (unsigned int i = 1; i < m_data.size(); i++) {
         ClusterItem* item = m_data[i];
         if (item->x > m_dataMaxX)
             m_dataMaxX = item->x;
@@ -92,13 +94,13 @@ void AgentCluster::start() {
     }
     printf("Created a swarm containing %i agents...\n", swarmSize);
 
-    m_agentSensorRange = averageClusterDistance() / 15.0;
+    m_agentSensorRange = averageClusterDistance() / 5.0;
     m_agentBeta = 10;
-    m_agentStepSize = m_agentSensorRange / 4.0;
+    m_agentStepSize = m_agentSensorRange / 5.0;
     m_dataConcentrationSlope = (double)1 / m_data.size();
     m_crowdingConcetrationSlope = (double)(-1) / m_agents.size();
 
-    for (int i = 0; i < m_agents.size(); i++)
+    for (unsigned int i = 0; i < m_agents.size(); i++)
         m_agents[i]->effectiveRange = m_agentSensorRange / 2.0;
 
 
@@ -121,7 +123,7 @@ void AgentCluster::convergencePhase() {
     for (int i = 0; i < m_iterations; i++) {
         updateHappiness();
         updateRanges();
-        for (int j = 0; j < m_agents.size(); j++) {
+        for (unsigned int j = 0; j < m_agents.size(); j++) {
             Agent* agentOne = m_agents[j];
             Agent* agentTwo = bestAgentInRange(agentOne);   //best agent in range.
             if (agentTwo) //we have an agent to move towards
@@ -161,13 +163,13 @@ void AgentCluster::assignmentPhase() {
  *      Re(i) = (sensorRange *  Pi * sensorRange^2) / (1 + beta * neighbors)
  */
 void AgentCluster::updateRanges() {
-    for (int i = 0; i < m_agents.size(); i++) {
+    for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent *agent = m_agents[i];
         int neighborCount = (int) agentsWithinPersonalSpace(agent).size();
 
         double dT = (double)neighborCount / ((double)PI * (double)pow(m_agentSensorRange, 2));
         double rD = (double)m_agentSensorRange / ((double)1.0 + ((double)m_agentBeta * dT));
-        double personalSpace = rD / (double)2.0;
+        double personalSpace = rD / (double)5.0;
 
         agent->effectiveRange = rD;
         agent->personalSpace = personalSpace;
@@ -179,7 +181,7 @@ void AgentCluster::updateRanges() {
  * position.
  */
 void AgentCluster::updateHappiness() {
-    for (int i = 0; i < m_agents.size(); i++) {
+    for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent* agent = m_agents[i];
         agent->happiness = calculateHappiness(agent);
     }
@@ -267,7 +269,7 @@ Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
     std::vector<Agent*> agents = agentsWithinPersonalSpace(agent);
     double bestHappiness = 0;
     Agent* bestAgent = 0;
-    for (int i = 0; i < agents.size(); i++) {
+    for (unsigned int i = 0; i < agents.size(); i++) {
         Agent* testAgent = agents[i];
         if (testAgent->happiness > bestHappiness) {
             bestHappiness = testAgent->happiness;
@@ -285,7 +287,7 @@ Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
  */
 std::vector<Agent*> AgentCluster::agentsWithinPersonalSpace(Agent *agent) const {
     std::vector<Agent*> closeAgents;
-    for (int i = 0; i < m_agents.size(); i++) {
+    for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent* testAgent = m_agents[i];
         if (testAgent == agent)
             continue;
@@ -312,7 +314,7 @@ double AgentCluster::calculateHappiness(Agent *agent) const {
     double crowdingFactor = m_crowdingConcetrationSlope * (double)neighboringAgents + (double)1;
 
     int neighboringData = 0;
-    for (int i = 0; i < m_data.size(); i++) {
+    for (unsigned int i = 0; i < m_data.size(); i++) {
         ClusterItem* item = m_data[i];
         double distance = pointDistance(agent->x, item->x, agent->y, item->y);
         if (distance <= agent->effectiveRange)
@@ -338,9 +340,9 @@ double AgentCluster::averageClusterDistance() const {
 
     int count = 0;
     double averageDistance = 0;
-    for (int i = 0; i < m_data.size(); i++) {
+    for (unsigned int i = 0; i < m_data.size(); i++) {
         ClusterItem* itemOne = m_data[i];
-        for (int j = 0; j < m_data.size(); j++) {
+        for (unsigned int j = 0; j < m_data.size(); j++) {
             if (i == j)
                 continue;
             ClusterItem* itemTwo = m_data[j];

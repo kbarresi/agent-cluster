@@ -5,6 +5,7 @@
 #include "def.h"
 
 #include <time.h>
+#include <stdio.h>
 
 void printUsage();
 

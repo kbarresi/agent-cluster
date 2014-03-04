@@ -5,6 +5,8 @@
 #include <QGraphicsEllipseItem>
 #include <QThread>
 
+#include <stdio.h>
+
 /**
  * @brief ClusterCanvas::ClusterCanvas Visualization class that takes care of showing ClusterItem
  * and Agent objects on a scaled 2d canvas.
@@ -33,13 +35,13 @@ ClusterCanvas::ClusterCanvas(std::string dataSource, int iterations, QWidget *pa
     connect(m_cluster, SIGNAL(update(std::vector<ClusterItem*>*,std::vector<Agent*>*)),
             SLOT(updateDisplay(std::vector<ClusterItem*>*,std::vector<Agent*>*)));
     if (!m_cluster->loadData(dataSource)) {
-        printf("Error: unable to open data file: %s\n\n", dataSource);
+        printf("Error: unable to open data file: %s\n\n", dataSource.c_str());
         delete m_cluster;
         delete m_clusterThread;
         m_cluster = 0;
         m_clusterThread = 0;
     } else
-        printf("...loaded data: %i points\n", m_cluster->dataCount());
+        printf("...loaded data: %i points\n", (int)m_cluster->dataCount());
 }
 
 ClusterCanvas::~ClusterCanvas()
@@ -98,7 +100,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
         m_minY = (*items)[0]->y;
         m_maxX = m_minX;
         m_maxY = m_minY;
-        for (int i = 0; i < items->size(); i++) {
+        for (unsigned int i = 0; i < items->size(); i++) {
             ClusterItem* item = (*items)[i];
             if (item->x < m_minX)
                 m_minX = item->x;
@@ -129,7 +131,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
     QPen pen(Qt::black, 1);
 
     if (m_dataItems.size() == 0) {
-        for (int i = 0; i < items->size(); i++) {
+        for (unsigned int i = 0; i < items->size(); i++) {
             QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
             ClusterItem* clusterItem = (*items)[i];
             double pX = ((maxWidth - minWidth) * (clusterItem->x - m_minX)) / (rangeX) + minWidth;
@@ -147,7 +149,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
     //Draw the agents...
     brush.setColor(Qt::red);
-    for (int i = 0; i < agents->size(); i++) {
+    for (unsigned int i = 0; i < agents->size(); i++) {
         QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
         Agent* agent = (*agents)[i];
         double pX = ((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth;
@@ -165,7 +167,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
     brush.setColor(Qt::transparent);
     pen.setColor(Qt::blue);
     pen.setStyle(Qt::DashLine);
-    for (int i = 0; i < agents->size(); i++) {
+    for (unsigned int i = 0; i < agents->size(); i++) {
         QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
         Agent* agent = (*agents)[i];
 
@@ -191,7 +193,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
     //Draw personal space....
     pen.setColor(Qt::red);
-    for (int i = 0; i < agents->size(); i++) {
+    for (unsigned int i = 0; i < agents->size(); i++) {
         QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
         Agent* agent = (*agents)[i];
         double radius = agent->personalSpace;

@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <sstream>
-
+#include <stdlib.h>
 
 #define E 2.718281828459
 #define PI 3.14159265
