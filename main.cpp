@@ -7,8 +7,6 @@
 #include <time.h>
 
 void printUsage();
-void showCluster(std::vector<ClusterItem*> items, std::vector<Agent*> agents);
-ClusterCanvas* canvas = 0;
 
 int main(int argc, char *argv[])
 {
@@ -34,31 +32,12 @@ int main(int argc, char *argv[])
     }
     std::string dataFile = args.last().toStdString();
 
-    canvas = new ClusterCanvas(0);
+    ClusterCanvas* canvas = new ClusterCanvas(dataFile, iterations);
+    canvas->run();
 
-    AgentCluster* agentCluster = new AgentCluster(&showCluster);
-    if (!agentCluster->loadData(dataFile)) {
-        printf("Error: unable to open data file: %s\n\n", dataFile);
-        return 1;
-    } else
-        printf("...loaded data: %i points\n", agentCluster->dataCount());
-
-
-
-    agentCluster->start(iterations);
     return a.exec();
 }
 
-/**
- * @brief showCluster A simple wrapper for the ClusterCanvas::cluster function.
- * @param items Vector of ClusterItems to show.
- * @param agents Vector of Agents to show.
- */
-void showCluster(std::vector<ClusterItem*> items, std::vector<Agent*> agents) {
-    if (!canvas)
-        return;
-    canvas->cluster(items, agents);
-}
 
 /**
  * @brief printUsage Prints program usage to stdout

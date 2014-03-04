@@ -4,42 +4,62 @@
 #include "def.h"
 
 #include <string>
+#include <QObject>
 
-class AgentCluster
+class AgentCluster : public QObject
 {
+    Q_OBJECT
+
 public:
-    AgentCluster(AgentClusterVisualizer visualizeFunction);
+    AgentCluster(int iterations, QObject *parent = 0);
     ~AgentCluster();
 
     bool loadData(std::string dataSource);
-    void start(int iterations);
 
     size_t dataCount() const { return m_data.size(); }
     size_t agentCount() const { return m_agents.size(); }
+
+public slots:
+    void start();
+
+signals:
+    void update(std::vector<ClusterItem*>* items, std::vector<Agent*>* agents);
+
 private:
-
-    AgentClusterVisualizer m_visualizer;
-
+    int m_iterations;
 
     std::vector<Agent*> m_agents;
     std::vector<ClusterItem*> m_data;
 
+    double m_dataMinX;
+    double m_dataMaxX;
+    double m_dataMinY;
+    double m_dataMaxY;
 
+    double m_agentSensorRange;
+    double m_agentBeta;
+    double m_agentStepSize;
 
-    void convergencePhase(int iterations);
+    double m_dataConcentrationSlope;
+    double m_crowdingConcetrationSlope;
+
+    void convergencePhase();
     void consolidationPhase();
     void assignmentPhase();
 
     void updateRanges();
     void updateHappiness();
     void moveTowards(Agent* agentOne, Agent* agentTwo);
+    void moveRandomly(Agent* agent);
 
-
-    Agent* closestAgent(Agent* agent) const;
-    std::vector<Agent*> nearbyAgents(Agent* agent) const;
+    Agent* bestAgentInRange(Agent* agent) const;
+    std::vector<Agent*> agentsWithinEffectiveRange(Agent* agent) const;
     double calculateHappiness(Agent* agent) const;
 
+    double averageClusterDistance() const;
+    inline double pointDistance(double x1, double x2, double y1, double y2) const;
 
+    void sleep(int milliseconds);
 };
 
 #endif // AGENTCLUSTER_H

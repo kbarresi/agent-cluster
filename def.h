@@ -4,6 +4,10 @@
 #include <vector>
 #include <sstream>
 
+
+#define E 2.718281828459
+#define PI 3.14159265
+
 /**
  * @brief The ClusterItem struct Simple structure for holding values pertinent to inputted data.
  */
@@ -26,7 +30,7 @@ struct Agent {
     double x;
     double y;
 
-    float happiness;
+    double happiness;
 
     double effectiveRange;
     double selectionRange;
@@ -38,11 +42,9 @@ struct Agent {
     }
 };
 
-typedef void (*AgentClusterVisualizer)(std::vector<ClusterItem*>, std::vector<Agent*>);
-
-
 
 //Configuration parameters
+
 
 /* The swarm size compared to the data set size. For example, a value of 0.5 means that the swarm
  * size will be half of the size of the given data set.
@@ -50,8 +52,17 @@ typedef void (*AgentClusterVisualizer)(std::vector<ClusterItem*>, std::vector<Ag
 static double SWARM_SIZE_FACTOR = 0.5;
 
 
+/*
+ * The distance an agent can randomly move across the space, as compared to the Agent's effective range
+ */
+static double RANDOM_MOVE_FACTOR = 10.0;
 
 
+/*
+ * The amount agents dislike being crowded together. This is used as a constant in a decay function,
+ * and determines how strongly agent crowding affects happiness.
+ */
+static double CROWDING_ADVERSION_FACTOR = 1.0;
 
 
 //UTIL FUNCTIONS
