@@ -31,9 +31,20 @@ int main(int argc, char *argv[])
         iterations = args.at(iterationsIndex).toInt();
         printf("User set iterations: %i\n", iterations);
     }
+    int swarmSize = -1;
+    if (args.contains("-s")) {
+        int swarmSizeIndex = args.indexOf("-s") + 1;
+        if (swarmSizeIndex >= args.size()) {
+            printf("Error: swarm size not specified\n\n");
+            return 1;
+        }
+        swarmSize = args.at(swarmSizeIndex).toInt();
+        printf("User set swarm size: %i\n", swarmSize);
+    }
+
     std::string dataFile = args.last().toStdString();
 
-    ClusterCanvas* canvas = new ClusterCanvas(dataFile, iterations);
+    ClusterCanvas* canvas = new ClusterCanvas(dataFile, iterations, swarmSize);
     canvas->run();
 
     return a.exec();

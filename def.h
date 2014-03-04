@@ -50,20 +50,28 @@ struct Agent {
 /* The swarm size compared to the data set size. For example, a value of 0.5 means that the swarm
  * size will be half of the size of the given data set.
  */
-static double SWARM_SIZE_FACTOR = 0.25;
+static const double SWARM_SIZE_FACTOR = 0.25;
 
-
-/*
- * The distance an agent can randomly move across the space, as compared to the Agent's effective range
+/* The ratio of the average datapoint-to-datapoint distance to agent sensor range.
  */
-static double RANDOM_MOVE_FACTOR = 10.0;
+static const double SENSOR_TO_AVG_DIST_RATIO  = 0.1;
 
+/* The ratio of agent sensor range to agent step size.
+ */
+static const double STEP_SIZE_TO_SENSOR_RATIO = 0.2;
 
-/*
- * The amount agents dislike being crowded together. This is used as a constant in a decay function,
+/* Beta value used in updating agent effective range
+ */
+static const double AGENT_BETA = 10;
+
+/* The distance an agent can randomly move across the space, as compared to the Agent's effective range
+ */
+static const double RANDOM_MOVE_FACTOR = 10.0;
+
+/* The amount agents dislike being crowded together. This is used as a constant in a decay function,
  * and determines how strongly agent crowding affects happiness.
  */
-static double CROWDING_ADVERSION_FACTOR = 1.0;
+static const double CROWDING_ADVERSION_FACTOR = 1.0;
 
 
 //UTIL FUNCTIONS
@@ -105,6 +113,7 @@ static double randomDouble(double min, double max) {
     double f = (double)rand() / RAND_MAX;
     return min + f * (max - min);
 }
+
 
 
 #endif // DEF_H

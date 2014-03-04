@@ -17,7 +17,7 @@ class ClusterCanvas : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit ClusterCanvas(std::string dataSource, int iterations, QWidget *parent = 0);
+    explicit ClusterCanvas(std::string dataSource, int iterations, int swarmSize = -1, QWidget *parent = 0);
     ~ClusterCanvas();
 
 public slots:

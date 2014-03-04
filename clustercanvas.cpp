@@ -14,7 +14,7 @@
  * @param iterations Number of iterations to run for.
  * @param parent Parent QObject
  */
-ClusterCanvas::ClusterCanvas(std::string dataSource, int iterations, QWidget *parent) :
+ClusterCanvas::ClusterCanvas(std::string dataSource, int iterations, int swarmSize, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ClusterCanvas)
 {
@@ -29,7 +29,7 @@ ClusterCanvas::ClusterCanvas(std::string dataSource, int iterations, QWidget *pa
     m_calculatedDataRange = false;
 
     m_clusterThread = new QThread(this);
-    m_cluster = new AgentCluster(iterations, 0);
+    m_cluster = new AgentCluster(iterations, swarmSize, 0);
     m_cluster->moveToThread(m_clusterThread);
     connect(m_clusterThread, SIGNAL(started()), m_cluster, SLOT(start()));
     connect(m_cluster, SIGNAL(update(std::vector<ClusterItem*>*,std::vector<Agent*>*)),

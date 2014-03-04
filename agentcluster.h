@@ -11,7 +11,7 @@ class AgentCluster : public QObject
     Q_OBJECT
 
 public:
-    AgentCluster(int iterations, QObject *parent = 0);
+    AgentCluster(int iterations, int swarmSize = -1, QObject *parent = 0);
     ~AgentCluster();
 
     bool loadData(std::string dataSource);
@@ -27,9 +27,11 @@ signals:
 
 private:
     int m_iterations;
+    int m_swarmSize;
 
     std::vector<Agent*> m_agents;
     std::vector<ClusterItem*> m_data;
+
 
     double m_dataMinX;
     double m_dataMaxX;
@@ -37,7 +39,6 @@ private:
     double m_dataMaxY;
 
     double m_agentSensorRange;
-    double m_agentBeta;
     double m_agentStepSize;
 
     double m_dataConcentrationSlope;
@@ -53,7 +54,11 @@ private:
     void moveRandomly(Agent* agent);
 
     Agent* bestAgentInRange(Agent* agent) const;
+
     std::vector<Agent*> agentsWithinPersonalSpace(Agent* agent) const;
+    std::vector<Agent*> agentsWithinEffectiveRange(Agent* agent) const;
+    std::vector<Agent*> agentsWithinRange(Agent* agent, double range) const;
+
     double calculateHappiness(Agent* agent) const;
 
     double averageClusterDistance() const;

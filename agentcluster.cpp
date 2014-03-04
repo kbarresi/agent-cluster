@@ -6,17 +6,21 @@
 
 #include <math.h>
 
-AgentCluster::AgentCluster(int iterations, QObject *parent)
+AgentCluster::AgentCluster(int iterations, int swarmSize, QObject *parent)
     : QObject(parent)
 {
     m_iterations = iterations;
     m_agentSensorRange = 0;
-    m_agentBeta = 0;
     m_agentStepSize = 0;
     m_dataMinX = 0;
     m_dataMaxX = 0;
     m_dataMinY = 0;
     m_dataMaxY = 0;
+
+    if (swarmSize <= 0)
+        m_swarmSize = -1;
+    else
+        m_swarmSize = swarmSize;
 }
 
 AgentCluster::~AgentCluster() {
@@ -85,18 +89,18 @@ void AgentCluster::start() {
             m_dataMinY = item->y;
     }
 
-    int swarmSize = (int)((double)m_data.size() * SWARM_SIZE_FACTOR);
-    for (int i = 0; i < swarmSize; i++) {
+    if (m_swarmSize == -1)
+        m_swarmSize = (int)((double)m_data.size() * SWARM_SIZE_FACTOR);
+    for (int i = 0; i < m_swarmSize; i++) {
         Agent* agent = new Agent();
         agent->x = randomDouble(m_dataMinX, m_dataMaxX);
         agent->y = randomDouble(m_dataMinY, m_dataMaxY);
         m_agents.push_back(agent);
     }
-    printf("Created a swarm containing %i agents...\n", swarmSize);
+    printf("Created a swarm containing %i agents...\n", m_swarmSize);
 
-    m_agentSensorRange = averageClusterDistance() / 5.0;
-    m_agentBeta = 10;
-    m_agentStepSize = m_agentSensorRange / 5.0;
+    m_agentSensorRange = averageClusterDistance() * SENSOR_TO_AVG_DIST_RATIO;
+    m_agentStepSize = m_agentSensorRange * STEP_SIZE_TO_SENSOR_RATIO;
     m_dataConcentrationSlope = (double)1 / m_data.size();
     m_crowdingConcetrationSlope = (double)(-1) / m_agents.size();
 
@@ -165,10 +169,10 @@ void AgentCluster::assignmentPhase() {
 void AgentCluster::updateRanges() {
     for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent *agent = m_agents[i];
-        int neighborCount = (int) agentsWithinPersonalSpace(agent).size();
+        int neighborCount = (int) agentsWithinEffectiveRange(agent).size();
 
         double dT = (double)neighborCount / ((double)PI * (double)pow(m_agentSensorRange, 2));
-        double rD = (double)m_agentSensorRange / ((double)1.0 + ((double)m_agentBeta * dT));
+        double rD = (double)m_agentSensorRange / ((double)1.0 + (AGENT_BETA * dT));
         double personalSpace = rD / (double)5.0;
 
         agent->effectiveRange = rD;
@@ -266,7 +270,7 @@ void AgentCluster::moveRandomly(Agent *agent) {
  * @return The best Agent within range, or 0 if no Agents are found.
  */
 Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
-    std::vector<Agent*> agents = agentsWithinPersonalSpace(agent);
+    std::vector<Agent*> agents = agentsWithinEffectiveRange(agent);
     double bestHappiness = 0;
     Agent* bestAgent = 0;
     for (unsigned int i = 0; i < agents.size(); i++) {
@@ -280,26 +284,44 @@ Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
 }
 
 /**
- * @brief AgentCluster::agentsWithinEffectiveRange Finds Agents within the given Agent's effective
+ * @brief AgentCluster::agentsWithinEffectiveRange Finds Agents within the given Agent's personal
  * range.
  * @param agent The Agent to find neighbors for.
- * @return A vector of Agent objects within the Agent's effective range.
+ * @return A vector of Agent objects within the Agent's personal range.
  */
 std::vector<Agent*> AgentCluster::agentsWithinPersonalSpace(Agent *agent) const {
+    return agentsWithinRange(agent, agent->personalSpace);
+}
+
+/**
+ * @brief AgentCluster::agentsWithinEffectiveRange Finds Agent objects within the given Agent's
+ * effective range.
+ * @param agent The Agent to find neighbors for.
+ * @return A vector of Agent objects within the effective range.
+ */
+std::vector<Agent*> AgentCluster::agentsWithinEffectiveRange(Agent *agent) const {
+    return agentsWithinRange(agent, agent->effectiveRange);
+}
+
+/**
+ * @brief AgentCluster::agentsWithinRange Finds Agent objects within the given range of the
+ * Agent.
+ * @param agent Agent to search around.
+ * @param range Range of search.
+ * @return A vector of Agent objects within the given range.
+ */
+std::vector<Agent*> AgentCluster::agentsWithinRange(Agent *agent, double range) const {
     std::vector<Agent*> closeAgents;
     for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent* testAgent = m_agents[i];
         if (testAgent == agent)
             continue;
         double distance = sqrt(pow(testAgent->x - agent->x, 2) + pow(testAgent->y - agent->y, 2));
-        if (distance <= agent->personalSpace)
+        if (distance <= range)
             closeAgents.push_back(testAgent);
     }
     return closeAgents;
 }
-
-
-
 /**
  * @brief AgentCluster::calculateHappiness Calculates the happiness of the Agent at its given
  * position, with a value between [0, 1].
@@ -307,7 +329,8 @@ std::vector<Agent*> AgentCluster::agentsWithinPersonalSpace(Agent *agent) const 
  * point concentration Cd(i).
  * @param agent The Agent to calculate happiness for.
  * @return Happiness value between [0, 1].
- * @warning Doesn't work -- in development
+ * @warning Uses a very basic linear function system. Needs to be updated for logistic style scaling
+ * and to include the crowding/data concentration weights.
  */
 double AgentCluster::calculateHappiness(Agent *agent) const {
     int neighboringAgents = (int) agentsWithinPersonalSpace(agent).size();
