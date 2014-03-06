@@ -16,7 +16,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     clustercanvas.cpp \
-    agentcluster.cpp
+    agentcluster.cpp \
+    gui/qgraphicsellipseitemobject.cpp \
+    gui/qgraphicslineitemobject.cpp
 
 FORMS += \
     clustercanvas.ui
@@ -24,4 +26,6 @@ FORMS += \
 HEADERS += \
     clustercanvas.h \
     def.h \
-    agentcluster.h
+    agentcluster.h \
+    gui/qgraphicsellipseitemobject.h \
+    gui/qgraphicslineitemobject.h

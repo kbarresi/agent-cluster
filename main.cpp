@@ -55,8 +55,12 @@ int main(int argc, char *argv[])
  * @brief printUsage Prints program usage to stdout
  */
 void printUsage() {
-    printf("Usage: AgentCluster [iterations] <data.csv>\n");
+    printf("Usage: AgentCluster [options] <data.csv>\n");
     printf("\nWhere <data.csv> is a comma-separated list of input data, with two ");
     printf("columns, each representing an x/y position. The values will be graphically ");
     printf("clustered using the AgentCluster algorithm.\n\n");
+    printf("Options:\n");
+    printf("\t-n\tNumber of iterations to run\n");
+    printf("\t-s\tNumber of agents in swarm\n");
+    printf("\n\n\n");
 }

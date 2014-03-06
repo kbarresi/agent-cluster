@@ -105,7 +105,7 @@ void AgentCluster::start() {
     m_crowdingConcetrationSlope = (double)(-1) / m_agents.size();
 
     for (unsigned int i = 0; i < m_agents.size(); i++)
-        m_agents[i]->effectiveRange = m_agentSensorRange / 2.0;
+        m_agents[i]->foragingRange = m_agentSensorRange / 2.0;
 
 
 
@@ -140,7 +140,7 @@ void AgentCluster::convergencePhase() {
         if (i % 1 == 0) {
             emit update(&m_data, &m_agents);
             printf("\t...updated display\n");
-            sleep(1000);
+            sleep(MOVEMENT_DELAY);
         }
     }
 }
@@ -163,20 +163,20 @@ void AgentCluster::assignmentPhase() {
 /**
  * @brief AgentCluster::updateRanges Update the effective and selection ranges of all agents.
  * @details We follow a basic formula for the effective and selection ranges of agents as described
- * in the original AgentCluster paper. That is, the effective range Re(i) is:
+ * in the original AgentCluster paper. That is, the foraging range Re(i) is:
  *      Re(i) = (sensorRange *  Pi * sensorRange^2) / (1 + beta * neighbors)
  */
 void AgentCluster::updateRanges() {
     for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent *agent = m_agents[i];
-        int neighborCount = (int) agentsWithinEffectiveRange(agent).size();
+        int neighborCount = (int) agentsWithinForagingRange(agent).size();
 
         double dT = (double)neighborCount / ((double)PI * (double)pow(m_agentSensorRange, 2));
         double rD = (double)m_agentSensorRange / ((double)1.0 + (AGENT_BETA * dT));
         double personalSpace = rD / (double)5.0;
 
-        agent->effectiveRange = rD;
-        agent->personalSpace = personalSpace;
+        agent->foragingRange = rD;
+        agent->crowdingRange = personalSpace;
     }
 }
 
@@ -197,18 +197,29 @@ void AgentCluster::updateHappiness() {
  * @param agentTwo The agent who is being moved towards.
  */
 void AgentCluster::moveTowards(Agent *agentOne, Agent *agentTwo) {
-    double deltaX = agentTwo->x - agentOne->x;
-    double deltaY = agentTwo->y - agentOne->y;
-    double agentDistance = sqrt(pow(deltaX, 2) + pow(deltaY, 2));
+    double agentDistance = pointDistance(agentOne->x, agentTwo->x, agentOne->y, agentTwo->y);
     if (agentDistance == 0)
         return;
 
-    double movementDistance = std::min(randomDouble(0.0, m_agentStepSize), agentDistance);
+    double moveMagnitude = std::min(randomDouble(0, agentOne->foragingRange), agentDistance);
+    double unitVectorX = (agentTwo->x - agentOne->x) / agentDistance;
+    double unitVectorY = (agentTwo->y - agentOne->y) / agentDistance;
 
-    double newX = ((deltaX / agentDistance) * movementDistance) + agentOne->x;
-    double newY = ((deltaY / agentDistance) * movementDistance) + agentOne->y;
+    double newX = agentOne->x + (moveMagnitude * unitVectorX);
+    double newY = agentOne->y + (moveMagnitude * unitVectorY);
+
     Q_ASSERT_X(nanTest(newX), "Failed NaN", __FUNCTION__);
     Q_ASSERT_X(nanTest(newY), "Failed NaN", __FUNCTION__);
+
+    if (newX > m_dataMaxX)
+        newX = m_dataMaxX;
+    else if (newX < m_dataMinX)
+        newX = m_dataMinX;
+    if (newY > m_dataMaxY)
+        newY = m_dataMaxY;
+    else if (newY < m_dataMinY)
+        newY = m_dataMinY;
+
 
     agentOne->x = newX;
     agentOne->y = newY;
@@ -217,7 +228,7 @@ void AgentCluster::moveTowards(Agent *agentOne, Agent *agentTwo) {
 
 /**
  * @brief AgentCluster::moveRandomly Moves the agent randomly across the search space, a distance
- * related to the Agent's effective range. If the newly selected position has a lower hapiness
+ * related to the Agent's foraging range. If the newly selected position has a lower hapiness
  * level than the original, the agent is moved back to the original spot.
  * @param agent Agent to move.
  */
@@ -226,31 +237,26 @@ void AgentCluster::moveRandomly(Agent *agent) {
     double initialY = agent->y;
     double initialHappiness = agent->happiness;
 
+    double moveMagnitude =  randomDouble(0.0, agent->foragingRange * RANDOM_MOVE_FACTOR + 1);
+    double moveDirection = randomDouble(0, 360) * (PI / 180.0);
 
-    double distance =  randomDouble(0.0, agent->effectiveRange * RANDOM_MOVE_FACTOR + 1);
-    double xComponent = (double)rand() / (double)RAND_MAX * distance;
-    if (rand() % 2)
-        xComponent *= -1.0;
-    double yComponent = (double)rand() / (double)RAND_MAX * distance;
-    if (rand() % 2)
-        yComponent *= -1.0;
+    double posX = initialX + (cos(moveDirection) * moveMagnitude);
+    double posY = initialY + (sin(moveDirection) * moveMagnitude);
 
-    double pX = initialX + xComponent;
-    double pY = initialY + yComponent;
+    Q_ASSERT_X(nanTest(posX), "Failed NaN", __FUNCTION__);
+    Q_ASSERT_X(nanTest(posY), "Failed NaN", __FUNCTION__);
 
-    if (pX < m_dataMinX)
-        pX = m_dataMinX;
-    else if (pX > m_dataMaxX)
-        pX = m_dataMaxX;
-    if (pY < m_dataMinY)
-        pY = m_dataMinY;
-    else if (pY > m_dataMaxY)
-        pY = m_dataMaxY;
+    if (posX > m_dataMaxX)
+        posX = m_dataMaxX;
+    else if (posX < m_dataMinX)
+        posX = m_dataMinX;
+    if (posY > m_dataMaxY)
+        posY = m_dataMaxY;
+    else if (posY < m_dataMinY)
+        posY = m_dataMinY;
 
-    Q_ASSERT_X(nanTest(pX), "Failed NaN", __FUNCTION__);
-    Q_ASSERT_X(nanTest(pY), "Failed NaN", __FUNCTION__);
-    agent->x = pX;
-    agent->y = pY;
+    agent->x = posX;
+    agent->y = posY;
     double newHappiness = calculateHappiness(agent);
     if (newHappiness >= initialHappiness) { //did we find a better position?
         agent->happiness = newHappiness;
@@ -263,14 +269,14 @@ void AgentCluster::moveRandomly(Agent *agent) {
 }
 
 /**
- * @brief AgentCluster::bestAgentInRange Finds the best Agent within the effective range, based on
- * Euclidean distance. If there are no agents within the given Agent's effective range, 0 is
+ * @brief AgentCluster::bestAgentInRange Finds the best Agent within the foraging range, based on
+ * Euclidean distance. If there are no agents within the given Agent's foraging range, 0 is
  * returned.
  * @param agent The Agent to find the closest neighbor for.
  * @return The best Agent within range, or 0 if no Agents are found.
  */
 Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
-    std::vector<Agent*> agents = agentsWithinEffectiveRange(agent);
+    std::vector<Agent*> agents = agentsWithinForagingRange(agent);
     double bestHappiness = 0;
     Agent* bestAgent = 0;
     for (unsigned int i = 0; i < agents.size(); i++) {
@@ -284,23 +290,23 @@ Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
 }
 
 /**
- * @brief AgentCluster::agentsWithinEffectiveRange Finds Agents within the given Agent's personal
+ * @brief AgentCluster::agentsWithinCrowdingRange Finds Agents within the given Agent's personal
  * range.
  * @param agent The Agent to find neighbors for.
- * @return A vector of Agent objects within the Agent's personal range.
+ * @return A vector of Agent objects within the Agent's crowding range.
  */
-std::vector<Agent*> AgentCluster::agentsWithinPersonalSpace(Agent *agent) const {
-    return agentsWithinRange(agent, agent->personalSpace);
+std::vector<Agent*> AgentCluster::agentsWithinCrowdingRange(Agent *agent) const {
+    return agentsWithinRange(agent, agent->crowdingRange);
 }
 
 /**
- * @brief AgentCluster::agentsWithinEffectiveRange Finds Agent objects within the given Agent's
- * effective range.
+ * @brief AgentCluster::agentsWithinForagingRange Finds Agent objects within the given Agent's
+ * foraging range.
  * @param agent The Agent to find neighbors for.
- * @return A vector of Agent objects within the effective range.
+ * @return A vector of Agent objects within the foraging range.
  */
-std::vector<Agent*> AgentCluster::agentsWithinEffectiveRange(Agent *agent) const {
-    return agentsWithinRange(agent, agent->effectiveRange);
+std::vector<Agent*> AgentCluster::agentsWithinForagingRange(Agent *agent) const {
+    return agentsWithinRange(agent, agent->foragingRange);
 }
 
 /**
@@ -325,29 +331,29 @@ std::vector<Agent*> AgentCluster::agentsWithinRange(Agent *agent, double range) 
 /**
  * @brief AgentCluster::calculateHappiness Calculates the happiness of the Agent at its given
  * position, with a value between [0, 1].
- * @details The happiness of Agent i is related to both the crowding factor Ca(i), and the data
- * point concentration Cd(i).
+ * @details The happiness of Agent i is related to both the number of neighboring agents, and the
+ * local data point concentration.
  * @param agent The Agent to calculate happiness for.
  * @return Happiness value between [0, 1].
  * @warning Uses a very basic linear function system. Needs to be updated for logistic style scaling
  * and to include the crowding/data concentration weights.
  */
 double AgentCluster::calculateHappiness(Agent *agent) const {
-    int neighboringAgents = (int) agentsWithinPersonalSpace(agent).size();
-    double crowdingFactor = m_crowdingConcetrationSlope * (double)neighboringAgents + (double)1;
+    //h(i) = O(p_i) / (|A(p_i, r_c^i)| + 1)
 
-    int neighboringData = 0;
+    //For our clustering algorithm, the objective function is the percentage of data points located
+    //within the foraging range of the agent.
+    double objectiveFunctionValue = 0;
     for (unsigned int i = 0; i < m_data.size(); i++) {
         ClusterItem* item = m_data[i];
         double distance = pointDistance(agent->x, item->x, agent->y, item->y);
-        if (distance <= agent->effectiveRange)
-            neighboringData++;
+        if (distance <= agent->foragingRange)
+            objectiveFunctionValue++;
     }
+    objectiveFunctionValue /= m_data.size();
 
-    double dataConcentration = m_dataConcentrationSlope * (double)(neighboringData);
-    double totalScore = dataConcentration - crowdingFactor; //ranges from [-1, 1]. Normalize to [0, 1];
-    totalScore = (totalScore + (double)1.0) / (double)2.0;
-
+    int neighborCount = (int) agentsWithinCrowdingRange(agent).size();
+    double totalScore = objectiveFunctionValue / (double)(neighborCount + 1);
     return totalScore;
 }
 

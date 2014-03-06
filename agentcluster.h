@@ -55,8 +55,8 @@ private:
 
     Agent* bestAgentInRange(Agent* agent) const;
 
-    std::vector<Agent*> agentsWithinPersonalSpace(Agent* agent) const;
-    std::vector<Agent*> agentsWithinEffectiveRange(Agent* agent) const;
+    std::vector<Agent*> agentsWithinCrowdingRange(Agent* agent) const;
+    std::vector<Agent*> agentsWithinForagingRange(Agent* agent) const;
     std::vector<Agent*> agentsWithinRange(Agent* agent, double range) const;
 
     double calculateHappiness(Agent* agent) const;

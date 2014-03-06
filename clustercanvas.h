@@ -2,8 +2,11 @@
 #define CLUSTERCANVAS_H
 
 #include "def.h"
+#include "gui/qgraphicsellipseitemobject.h"
+#include "gui/qgraphicslineitemobject.h"
 
 #include <QMainWindow>
+#include <QHash>
 #include <QGraphicsView>
 #include <QGraphicsScene>
 
@@ -25,6 +28,19 @@ public slots:
     void run();
 
 private:
+    struct AgentVisualizer {
+        QGraphicsEllipseItemObject* agent;
+        QGraphicsEllipseItemObject* forageRange;
+        QGraphicsEllipseItemObject* crowdingRange;
+        QGraphicsLineItemObject* trail;
+
+        AgentVisualizer() {
+            agent = forageRange = crowdingRange = 0;
+            trail = 0;
+        }
+    };
+
+
     Ui::ClusterCanvas *ui;
 
     AgentCluster* m_cluster;
@@ -33,14 +49,15 @@ private:
     QGraphicsView* m_view;
     QGraphicsScene* m_scene;
 
-    std::vector<QGraphicsEllipseItem*> m_dataItems;
-    std::vector<QGraphicsEllipseItem*> m_agentItems;
+    std::vector<QGraphicsEllipseItemObject*> m_dataItems;
+    QHash<Agent*, AgentVisualizer*> m_agentVisualizers;
 
     double m_minX;
     double m_maxX;
     double m_minY;
     double m_maxY;
     bool m_calculatedDataRange;
+
 };
 
 #endif // CLUSTERCANVAS_H

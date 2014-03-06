@@ -32,14 +32,14 @@ struct Agent {
 
     double happiness;
 
-    double effectiveRange;
-    double personalSpace;
+    double foragingRange;
+    double crowdingRange;
     double selectionRange;
 
     Agent() {
         x = y = 0;
         happiness = 0.0;
-        effectiveRange = selectionRange = personalSpace = 0.0;
+        foragingRange = selectionRange = crowdingRange = 0.0;
     }
 };
 
@@ -73,6 +73,12 @@ static const double RANDOM_MOVE_FACTOR = 10.0;
  */
 static const double CROWDING_ADVERSION_FACTOR = 1.0;
 
+
+static const int MOVEMENT_DELAY = 1000;         //in milliseconds
+static const bool ANIMATED = true;
+static const bool SHOW_FORAGE_RANGE = false;
+static const bool SHOW_CROWDING_RANGE = false;
+static const bool SHOW_PATH = false;
 
 //UTIL FUNCTIONS
 

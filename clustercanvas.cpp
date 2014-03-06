@@ -3,7 +3,9 @@
 #include "ui_clustercanvas.h"
 
 #include <QGraphicsEllipseItem>
+#include <QPropertyAnimation>
 #include <QThread>
+
 
 #include <stdio.h>
 
@@ -53,7 +55,6 @@ ClusterCanvas::~ClusterCanvas()
     if (m_cluster)
         delete m_cluster;
 
-    m_agentItems.clear();
     m_dataItems.clear();
 
 
@@ -85,14 +86,6 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
         m_view->setSceneRect(boundingArea);
     }
 
-
-    while (m_agentItems.size() != 0) {
-        QGraphicsEllipseItem* item = m_agentItems[m_agentItems.size() - 1];
-        item->hide();
-        m_scene->removeItem(item);
-        delete item;
-        m_agentItems.pop_back();
-    }
 
     //Shift everything so that (0, 0) is the smallest x/y position. For viewing purposes
     if (!m_calculatedDataRange) {
@@ -132,7 +125,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
     if (m_dataItems.size() == 0) {
         for (unsigned int i = 0; i < items->size(); i++) {
-            QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
+            QGraphicsEllipseItemObject* item = new QGraphicsEllipseItemObject(0);
             ClusterItem* clusterItem = (*items)[i];
             double pX = ((maxWidth - minWidth) * (clusterItem->x - m_minX)) / (rangeX) + minWidth;
             double pY = ((maxHeight - minHeight) * (clusterItem->y - m_minY)) / (rangeY) + minHeight;
@@ -146,71 +139,135 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
         }
     }
 
-
-    //Draw the agents...
-    brush.setColor(Qt::red);
+    //Go through and draw each agent, and related structures
     for (unsigned int i = 0; i < agents->size(); i++) {
-        QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
         Agent* agent = (*agents)[i];
-        double pX = ((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth;
-        double pY = ((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY) + minHeight;
+        AgentVisualizer* visualizer = 0;
+        if (m_agentVisualizers.contains(agent))
+            visualizer = m_agentVisualizers.value(agent);
+        else {
+            visualizer = new AgentVisualizer();
+            m_agentVisualizers.insert(agent, visualizer);
+        }
 
-        item->setRect(pX, pY, 2, 2);
-        item->setBrush(brush);
-        item->setPen(pen);
-        m_scene->addItem(item);
-        item->show();
-        m_agentItems.push_back(item);
-    }
+        //Draw the agent itself...
+        QGraphicsEllipseItemObject* radiusItem = 0;
+        brush.setColor(Qt::red);
+        if (visualizer->agent)
+            radiusItem = visualizer->agent;
+        else {
+            radiusItem = new QGraphicsEllipseItemObject(0);
+            radiusItem->setBrush(brush);
+            radiusItem->setPen(pen);
+            radiusItem->setRect(0, 0, 4, 4);
+            m_scene->addItem(radiusItem);
+            radiusItem->show();
+            visualizer->agent = radiusItem;
+        }
 
-    //Draw the effective range...
-    brush.setColor(Qt::transparent);
-    pen.setColor(Qt::blue);
-    pen.setStyle(Qt::DashLine);
-    for (unsigned int i = 0; i < agents->size(); i++) {
-        QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
-        Agent* agent = (*agents)[i];
+        double pX = (((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth) - (radiusItem->boundingRect().width() / 2.0);
+        double pY = (((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY) + minHeight) - (radiusItem->boundingRect().height() / 2.0);
 
-        double radius = agent->effectiveRange;
-        double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
-        double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+        if (SHOW_PATH) {    //And the path, if selected
+            QGraphicsLineItemObject* trail = 0;
+            if (visualizer->trail)
+                trail = visualizer->trail;
+            else {
+                trail = new QGraphicsLineItemObject(0);
+                trail->setPen(pen);
+                m_scene->addItem(trail);
+                trail->show();
+                visualizer->trail = trail;
+            }
+            trail->setLine(radiusItem->x(), radiusItem->y(), pX, pY);
+        }
 
-        double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
-        double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+        if (ANIMATED) {
+            QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
+            mover->setDuration(MOVEMENT_DELAY - 1);
+            mover->setStartValue(radiusItem->pos());
+            mover->setEndValue(QPointF(pX, pY));
+            mover->start(QAbstractAnimation::DeleteWhenStopped);
+        } else {
+            radiusItem->setPos(pX, pY);
+        }
 
-        QPointF topLeft = QPointF(topLeftX, topLeftY);
-        QPointF bottomRight = QPointF(bottomRightX, bottomRightY);
-        QRectF ellipseRect(topLeft, bottomRight);
+
+        ////////Draw the forage range
+        brush.setColor(Qt::transparent);
+        pen.setColor(QColor(0, 0, 255, 128));
+        pen.setStyle(Qt::DashLine);
+        if (SHOW_FORAGE_RANGE) {
+            radiusItem = 0;
+            if (visualizer->forageRange)
+                radiusItem = visualizer->forageRange;
+            else {
+                radiusItem = new QGraphicsEllipseItemObject(0);
+                radiusItem->setBrush(brush);
+                radiusItem->setPen(pen);
+                m_scene->addItem(radiusItem);
+                radiusItem->show();
+                visualizer->forageRange = radiusItem;
+            }
+
+            double radius = agent->foragingRange;
+            double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
+            double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+
+            double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
+            double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+
+            double ellipseWidth = bottomRightX - topLeftX;
+            double ellipseHeight = bottomRightY - topLeftY;
+
+            radiusItem->setRect(0, 0, ellipseWidth, ellipseHeight);
+            if (ANIMATED) {
+                QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
+                mover->setDuration(MOVEMENT_DELAY - 1);
+                mover->setStartValue(radiusItem->pos());
+                mover->setEndValue(QPointF(topLeftX, topLeftY));
+                mover->start(QAbstractAnimation::DeleteWhenStopped);
+            } else {
+                radiusItem->setPos(topLeftX, topLeftY);
+            }
+        }
 
 
-        item->setRect(ellipseRect);
-        item->setBrush(brush);
-        item->setPen(pen);
-        m_scene->addItem(item);
-        item->show();
-        m_agentItems.push_back(item);
-    }
+        pen.setColor(QColor(255, 0, 0, 128));
+        if (SHOW_CROWDING_RANGE) {
+            radiusItem = 0;
+            if (visualizer->crowdingRange)
+                radiusItem = visualizer->crowdingRange;
+            else {
+                radiusItem = new QGraphicsEllipseItemObject(0);
+                radiusItem->setBrush(brush);
+                radiusItem->setPen(pen);
+                m_scene->addItem(radiusItem);
+                radiusItem->show();
+                visualizer->crowdingRange = radiusItem;
+            }
+            double radius = agent->crowdingRange;
+            double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
+            double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
 
-    //Draw personal space....
-    pen.setColor(Qt::red);
-    for (unsigned int i = 0; i < agents->size(); i++) {
-        QGraphicsEllipseItem* item = new QGraphicsEllipseItem(0);
-        Agent* agent = (*agents)[i];
-        double radius = agent->personalSpace;
-        double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
-        double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+            double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
+            double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
 
-        double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
-        double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+            double ellipseWidth = bottomRightX - topLeftX;
+            double ellipseHeight = bottomRightY - topLeftY;
 
-        QPointF topLeft = QPointF(topLeftX, topLeftY);
-        QPointF bottomRight = QPointF(bottomRightX, bottomRightY);
-        QRectF ellipseRect(topLeft, bottomRight);
+            radiusItem->setRect(0, 0, ellipseWidth, ellipseHeight);
 
-        item->setRect(ellipseRect);
-        item->setPen(pen);
-        m_scene->addItem(item);
-        item->show();
-        m_agentItems.push_back(item);
+            if (ANIMATED) {
+                QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
+                mover->setDuration(MOVEMENT_DELAY - 1);
+                mover->setStartValue(radiusItem->pos());
+                mover->setEndValue(QPointF(topLeftX, topLeftY));
+                mover->start(QAbstractAnimation::DeleteWhenStopped);
+            } else {
+                radiusItem->setPos(topLeftX, topLeftY);
+            }
+
+        }
     }
 }
