@@ -66,7 +66,7 @@ static const double AGENT_BETA = 10;
 
 /* The distance an agent can randomly move across the space, as compared to the Agent's effective range
  */
-static const double RANDOM_MOVE_FACTOR = 10.0;
+static const double RANDOM_MOVE_FACTOR = 1.0;
 
 /* The amount agents dislike being crowded together. This is used as a constant in a decay function,
  * and determines how strongly agent crowding affects happiness.
@@ -76,8 +76,8 @@ static const double CROWDING_ADVERSION_FACTOR = 1.0;
 
 static const int MOVEMENT_DELAY = 1000;         //in milliseconds
 static const bool ANIMATED = true;
-static const bool SHOW_FORAGE_RANGE = false;
-static const bool SHOW_CROWDING_RANGE = false;
+static const bool SHOW_FORAGE_RANGE = true;
+static const bool SHOW_CROWDING_RANGE = true;
 static const bool SHOW_PATH = false;
 
 //UTIL FUNCTIONS

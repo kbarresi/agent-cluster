@@ -16,6 +16,7 @@ AgentCluster::AgentCluster(int iterations, int swarmSize, QObject *parent)
     m_dataMaxX = 0;
     m_dataMinY = 0;
     m_dataMaxY = 0;
+    m_minRange = 0;
 
     if (swarmSize <= 0)
         m_swarmSize = -1;
@@ -99,6 +100,22 @@ void AgentCluster::start() {
     }
     printf("Created a swarm containing %i agents...\n", m_swarmSize);
 
+    m_minRange = -1;
+    for (unsigned int i = 0; i < m_data.size(); i++) {
+        ClusterItem* item = m_data[i];
+        for (unsigned int j = 0; j < m_data.size(); j++) {
+            if (i == j)
+                continue;
+            ClusterItem* itemTwo = m_data[j];
+            double distance = pointDistance(item->x, itemTwo->x, item->y, itemTwo->y);
+            if (distance == 0)
+                continue;
+            if (distance < m_minRange || m_minRange == -1)
+                m_minRange = distance;
+        }
+    }
+    m_minRange *= 2.0;
+
     m_agentSensorRange = averageClusterDistance() * SENSOR_TO_AVG_DIST_RATIO;
     m_agentStepSize = m_agentSensorRange * STEP_SIZE_TO_SENSOR_RATIO;
     m_dataConcentrationSlope = (double)1 / m_data.size();
@@ -163,20 +180,19 @@ void AgentCluster::assignmentPhase() {
 /**
  * @brief AgentCluster::updateRanges Update the effective and selection ranges of all agents.
  * @details We follow a basic formula for the effective and selection ranges of agents as described
- * in the original AgentCluster paper. That is, the foraging range Re(i) is:
- *      Re(i) = (sensorRange *  Pi * sensorRange^2) / (1 + beta * neighbors)
+ * in the original AgentCluster paper. That is, the foraging range r_f is:
+ *      r_f = alpha + (r_s - alpha)/(1 + beta * neighborCount)
  */
 void AgentCluster::updateRanges() {
     for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent *agent = m_agents[i];
+
         int neighborCount = (int) agentsWithinForagingRange(agent).size();
+        double beta = 10.0;
 
-        double dT = (double)neighborCount / ((double)PI * (double)pow(m_agentSensorRange, 2));
-        double rD = (double)m_agentSensorRange / ((double)1.0 + (AGENT_BETA * dT));
-        double personalSpace = rD / (double)5.0;
-
-        agent->foragingRange = rD;
-        agent->crowdingRange = personalSpace;
+        double r_f = m_minRange + ( (m_agentSensorRange - m_minRange) / (1.0 + (beta * (double)neighborCount)) );
+        agent->foragingRange = r_f;
+        agent->crowdingRange = r_f * 0.25;
     }
 }
 
@@ -201,7 +217,7 @@ void AgentCluster::moveTowards(Agent *agentOne, Agent *agentTwo) {
     if (agentDistance == 0)
         return;
 
-    double moveMagnitude = std::min(randomDouble(0, agentOne->foragingRange), agentDistance);
+    double moveMagnitude = std::min(randomDouble(0, agentOne->foragingRange), agentDistance) * randomDouble(0, 0.9);
     double unitVectorX = (agentTwo->x - agentOne->x) / agentDistance;
     double unitVectorY = (agentTwo->y - agentOne->y) / agentDistance;
 

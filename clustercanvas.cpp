@@ -220,11 +220,14 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             double ellipseWidth = bottomRightX - topLeftX;
             double ellipseHeight = bottomRightY - topLeftY;
 
+            double startX = visualizer->agent->x() - (ellipseWidth / 2);
+            double startY = visualizer->agent->y() - (ellipseHeight / 2);
+
             radiusItem->setRect(0, 0, ellipseWidth, ellipseHeight);
             if (ANIMATED) {
                 QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
                 mover->setDuration(MOVEMENT_DELAY - 1);
-                mover->setStartValue(radiusItem->pos());
+                mover->setStartValue(QPointF(startX, startY));
                 mover->setEndValue(QPointF(topLeftX, topLeftY));
                 mover->start(QAbstractAnimation::DeleteWhenStopped);
             } else {
@@ -256,12 +259,15 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             double ellipseWidth = bottomRightX - topLeftX;
             double ellipseHeight = bottomRightY - topLeftY;
 
+            double startX = visualizer->agent->x() - (ellipseWidth / 2);
+            double startY = visualizer->agent->y() - (ellipseHeight / 2);
+
             radiusItem->setRect(0, 0, ellipseWidth, ellipseHeight);
 
             if (ANIMATED) {
                 QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
                 mover->setDuration(MOVEMENT_DELAY - 1);
-                mover->setStartValue(radiusItem->pos());
+                mover->setStartValue(QPointF(startX, startY));
                 mover->setEndValue(QPointF(topLeftX, topLeftY));
                 mover->start(QAbstractAnimation::DeleteWhenStopped);
             } else {

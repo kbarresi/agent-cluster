@@ -39,6 +39,7 @@ private:
     double m_dataMaxY;
 
     double m_agentSensorRange;
+    double m_minRange;
     double m_agentStepSize;
 
     double m_dataConcentrationSlope;
