@@ -54,7 +54,7 @@ static const double SWARM_SIZE_FACTOR = 0.25;
 
 /* The ratio of the average datapoint-to-datapoint distance to agent sensor range.
  */
-static const double SENSOR_TO_AVG_DIST_RATIO  = 0.1;
+static const double SENSOR_TO_AVG_DIST_RATIO  = 0.5;
 
 /* The ratio of agent sensor range to agent step size.
  */
@@ -74,7 +74,7 @@ static const double RANDOM_MOVE_FACTOR = 1.0;
 static const double CROWDING_ADVERSION_FACTOR = 1.0;
 
 
-static const int MOVEMENT_DELAY = 1000;         //in milliseconds
+static const int MOVEMENT_DELAY = 250;         //in milliseconds
 static const bool ANIMATED = true;
 static const bool SHOW_FORAGE_RANGE = true;
 static const bool SHOW_CROWDING_RANGE = true;

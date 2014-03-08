@@ -56,6 +56,7 @@ private:
 
     Agent* bestAgentInRange(Agent* agent) const;
 
+    std::vector<ClusterItem*> dataWithinForagingRange(Agent* agent) const;
     std::vector<Agent*> agentsWithinCrowdingRange(Agent* agent) const;
     std::vector<Agent*> agentsWithinForagingRange(Agent* agent) const;
     std::vector<Agent*> agentsWithinRange(Agent* agent, double range) const;

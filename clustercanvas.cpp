@@ -227,7 +227,9 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             if (ANIMATED) {
                 QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
                 mover->setDuration(MOVEMENT_DELAY - 1);
-                mover->setStartValue(QPointF(startX, startY));
+
+                QPointF startingPoint = QPointF(startX, startY) + QPointF(visualizer->agent->boundingRect().width() / 2, visualizer->agent->boundingRect().height() / 2);
+                mover->setStartValue(startingPoint);
                 mover->setEndValue(QPointF(topLeftX, topLeftY));
                 mover->start(QAbstractAnimation::DeleteWhenStopped);
             } else {
@@ -267,7 +269,9 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             if (ANIMATED) {
                 QPropertyAnimation* mover = new QPropertyAnimation(radiusItem, "pos");
                 mover->setDuration(MOVEMENT_DELAY - 1);
-                mover->setStartValue(QPointF(startX, startY));
+
+                QPointF startingPoint = QPointF(startX, startY) + QPointF(visualizer->agent->boundingRect().width() / 2, visualizer->agent->boundingRect().height() / 2);
+                mover->setStartValue(startingPoint);
                 mover->setEndValue(QPointF(topLeftX, topLeftY));
                 mover->start(QAbstractAnimation::DeleteWhenStopped);
             } else {

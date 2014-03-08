@@ -187,12 +187,14 @@ void AgentCluster::updateRanges() {
     for (unsigned int i = 0; i < m_agents.size(); i++) {
         Agent *agent = m_agents[i];
 
+
         int neighborCount = (int) agentsWithinForagingRange(agent).size();
         double beta = 10.0;
 
         double r_f = m_minRange + ( (m_agentSensorRange - m_minRange) / (1.0 + (beta * (double)neighborCount)) );
         agent->foragingRange = r_f;
-        agent->crowdingRange = r_f * 0.25;
+
+        agent->crowdingRange = agent->foragingRange * 0.2;
     }
 }
 
@@ -303,6 +305,23 @@ Agent* AgentCluster::bestAgentInRange(Agent *agent) const {
         }
     }
     return bestAgent;
+}
+
+/**
+ * @brief AgentCluster::dataWithinForagingRange Finds data points within the give Agent's foraging
+ * range.
+ * @param agent The Agent to find data points for.
+ * @return A vector of ClusterItem objects within the Agent's foraging range.
+ */
+std::vector<ClusterItem*> AgentCluster::dataWithinForagingRange(Agent *agent) const {
+    std::vector<ClusterItem*> items;
+    for (unsigned int i = 0; i < m_data.size(); i++) {
+        ClusterItem* item = m_data[i];
+        double distance = pointDistance(agent->x, item->x, agent->y, item->y);
+        if (distance <= agent->foragingRange)
+            items.push_back(item);
+    }
+    return items;
 }
 
 /**
