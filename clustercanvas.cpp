@@ -123,7 +123,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
     QBrush brush(Qt::blue);
     QPen pen(Qt::black, 1);
 
-    if (m_dataItems.size() == 0) {
+    if (m_dataItems.size() == 0 && SHOW_DATA) {
         for (unsigned int i = 0; i < items->size(); i++) {
             QGraphicsEllipseItemObject* item = new QGraphicsEllipseItemObject(0);
             ClusterItem* clusterItem = (*items)[i];
@@ -194,8 +194,8 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
 
         ////////Draw the forage range
-        brush.setColor(Qt::transparent);
-        pen.setColor(QColor(0, 0, 255, 128));
+        brush.setColor(QColor(0, 0, 0, 50));
+        pen.setColor(Qt::transparent);
         pen.setStyle(Qt::DashLine);
         if (SHOW_FORAGE_RANGE) {
             radiusItem = 0;

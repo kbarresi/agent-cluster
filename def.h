@@ -58,7 +58,7 @@ static const double SENSOR_TO_AVG_DIST_RATIO  = 0.5;
 
 /* The ratio of the crowding range to the foraging range.
  */
-static const double CROWDING_TO_FORAGE_DIST_RATIO = 0.25;
+static const double CROWDING_TO_FORAGE_DIST_RATIO = 0.4;
 
 /* The ratio of agent sensor range to agent step size.
  */
@@ -75,14 +75,15 @@ static const double RANDOM_MOVE_FACTOR = 1.0;
 /* The amount agents dislike being crowded together. This is used as a constant in a decay function,
  * and determines how strongly agent crowding affects happiness.
  */
-static const double CROWDING_ADVERSION_FACTOR = 2.0;
+static const double CROWDING_ADVERSION_FACTOR = 5.0;
 
 
 static const int AGENT_SIZE = 7;
 static const int MOVEMENT_DELAY = 100;         //in milliseconds
 static const bool ANIMATED = true;
+static const bool SHOW_DATA = true;
 static const bool SHOW_FORAGE_RANGE = true;
-static const bool SHOW_CROWDING_RANGE = true;
+static const bool SHOW_CROWDING_RANGE = false;
 static const bool SHOW_PATH = false;
 
 //UTIL FUNCTIONS

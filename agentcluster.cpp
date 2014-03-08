@@ -90,8 +90,9 @@ void AgentCluster::start() {
             m_dataMinY = item->y;
     }
 
-    if (m_swarmSize == -1)
+    if (m_swarmSize == -1) {
         m_swarmSize = (int)((double)m_data.size() * SWARM_SIZE_FACTOR);
+    }
     for (int i = 0; i < m_swarmSize; i++) {
         Agent* agent = new Agent();
         agent->x = randomDouble(m_dataMinX, m_dataMaxX);
@@ -399,14 +400,16 @@ std::vector<Agent*> AgentCluster::agentsWithinRange(Agent *agent, double range) 
  * and to include the crowding/data concentration weights.
  */
 double AgentCluster::calculateHappiness(Agent *agent) const {
-    //h(i) = O(p_i) / (|A(p_i, r_c^i)| + 1)
+    //h(i) = O(p_i) / (pi * r_f^2 *|A(p_i, r_c^i)| + 1)
 
     //For our clustering algorithm, the objective function is the percentage of data points located
     //within the foraging range of the agent.
     double objectiveFunctionValue = (double)dataWithinForagingRange(agent).size() / (double)m_data.size();
 
     double neighborScore = CROWDING_ADVERSION_FACTOR * (double)agentsWithinCrowdingRange(agent).size();
-    double totalScore = objectiveFunctionValue / (double)(neighborScore + 1);
+    //double totalScore = objectiveFunctionValue / (double)((neighborScore * PI * pow(agent->foragingRange, 2)) + 1.0);
+    double totalScore = objectiveFunctionValue / (double)(neighborScore + 1.0);
+
     return totalScore;
 }
 
