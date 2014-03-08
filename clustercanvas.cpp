@@ -159,7 +159,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             radiusItem = new QGraphicsEllipseItemObject(0);
             radiusItem->setBrush(brush);
             radiusItem->setPen(pen);
-            radiusItem->setRect(0, 0, 4, 4);
+            radiusItem->setRect(0, 0, AGENT_SIZE, AGENT_SIZE);
             m_scene->addItem(radiusItem);
             radiusItem->show();
             visualizer->agent = radiusItem;

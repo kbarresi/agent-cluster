@@ -51,6 +51,7 @@ private:
 
     void updateRanges();
     void updateHappiness();
+    void move(Agent* agent);
     void moveTowards(Agent* agentOne, Agent* agentTwo);
     void moveRandomly(Agent* agent);
 

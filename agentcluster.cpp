@@ -100,25 +100,11 @@ void AgentCluster::start() {
     }
     printf("Created a swarm containing %i agents...\n", m_swarmSize);
 
-    m_minRange = -1;
-    for (unsigned int i = 0; i < m_data.size(); i++) {
-        ClusterItem* item = m_data[i];
-        for (unsigned int j = 0; j < m_data.size(); j++) {
-            if (i == j)
-                continue;
-            ClusterItem* itemTwo = m_data[j];
-            double distance = pointDistance(item->x, itemTwo->x, item->y, itemTwo->y);
-            if (distance == 0)
-                continue;
-            if (distance < m_minRange || m_minRange == -1)
-                m_minRange = distance;
-        }
-    }
-    m_minRange *= 2.0;
-
     m_agentSensorRange = averageClusterDistance() * SENSOR_TO_AVG_DIST_RATIO;
+    m_minRange = m_agentSensorRange * 0.2;
+
     m_agentStepSize = m_agentSensorRange * STEP_SIZE_TO_SENSOR_RATIO;
-    m_dataConcentrationSlope = (double)1 / m_data.size();
+    m_dataConcentrationSlope = -(m_agentSensorRange - m_minRange);
     m_crowdingConcetrationSlope = (double)(-1) / m_agents.size();
 
     for (unsigned int i = 0; i < m_agents.size(); i++)
@@ -145,12 +131,8 @@ void AgentCluster::convergencePhase() {
         updateHappiness();
         updateRanges();
         for (unsigned int j = 0; j < m_agents.size(); j++) {
-            Agent* agentOne = m_agents[j];
-            Agent* agentTwo = bestAgentInRange(agentOne);   //best agent in range.
-            if (agentTwo) //we have an agent to move towards
-                moveTowards(agentOne, agentTwo);
-            else    //otherwise, move randomly.
-                moveRandomly(agentOne);
+            Agent* agent= m_agents[j];
+            move(agent);
         }
 
         printf("Finished iteration %i...\n", i);
@@ -188,13 +170,12 @@ void AgentCluster::updateRanges() {
         Agent *agent = m_agents[i];
 
 
-        int neighborCount = (int) agentsWithinForagingRange(agent).size();
-        double beta = 10.0;
+        int dataCount = (int) dataWithinForagingRange(agent).size();
 
-        double r_f = m_minRange + ( (m_agentSensorRange - m_minRange) / (1.0 + (beta * (double)neighborCount)) );
-        agent->foragingRange = r_f;
+        double r_f = m_minRange + ((m_agentSensorRange - m_minRange) / (1.0 + AGENT_BETA * (double)dataCount));
 
-        agent->crowdingRange = agent->foragingRange * 0.2;
+        agent->foragingRange = (r_f + agent->foragingRange) * 0.5;
+        agent->crowdingRange = agent->foragingRange * CROWDING_TO_FORAGE_DIST_RATIO;
     }
 }
 
@@ -210,12 +191,56 @@ void AgentCluster::updateHappiness() {
 }
 
 /**
+ * @brief AgentCluster::move Takes care of moving an Agent to its next location.
+ * @param agent Agent to move.
+ */
+void AgentCluster::move(Agent *agent) {
+    std::vector<Agent*> neighbors =  agentsWithinForagingRange(agent);    //bestAgentInRange(agent);   //best agent in range.
+    if (neighbors.size() != 0) {    //has neighbors
+        Agent* bestNeighbor = neighbors[0];
+        for (unsigned int i = 1; i < neighbors.size(); i++) {
+            Agent* candidate = neighbors[i];
+            if (candidate->happiness > bestNeighbor->happiness)
+                bestNeighbor = candidate;
+        }
+        if (bestNeighbor->happiness > agent->happiness) {   //found a better neighbor we should move towards
+            moveTowards(agent, bestNeighbor);
+        } else {    //otherwise, just move randomly :(
+            moveRandomly(agent);
+        }
+    } else {    //all alone...
+        std::vector<ClusterItem*> items = dataWithinForagingRange(agent);
+
+        if (items.size() != 0) {    //alone, but with data?
+            //Find the average position vector and move in that direction
+            double avgX = 0;
+            double avgY = 0;
+            for (unsigned int i = 0; i < items.size(); i++) {
+                ClusterItem* item = items[i];
+                avgX += item->x - agent->x;
+                avgY += item->y - agent->y;
+            }
+            avgX /= (double)items.size();
+            avgY /= (double)items.size();
+            double magnitude = randomDouble(0.1, 1);
+
+            agent->x += avgX * magnitude;
+            agent->y += avgY * magnitude;
+        } else {                    //alone AND no data?
+            moveRandomly(agent);
+        }
+    }
+}
+
+/**
  * @brief AgentCluster::moveTowards Moves the first agent towards the second one.
  * @param agentOne The agent being moved.
  * @param agentTwo The agent who is being moved towards.
  */
 void AgentCluster::moveTowards(Agent *agentOne, Agent *agentTwo) {
-    double agentDistance = pointDistance(agentOne->x, agentTwo->x, agentOne->y, agentTwo->y);
+    double crowdingFactor = (agentOne->crowdingRange + agentTwo->crowdingRange) * 0.5;
+    double agentDistance = pointDistance(agentOne->x, agentTwo->x, agentOne->y, agentTwo->y) - crowdingFactor;
+
     if (agentDistance == 0)
         return;
 
@@ -378,17 +403,10 @@ double AgentCluster::calculateHappiness(Agent *agent) const {
 
     //For our clustering algorithm, the objective function is the percentage of data points located
     //within the foraging range of the agent.
-    double objectiveFunctionValue = 0;
-    for (unsigned int i = 0; i < m_data.size(); i++) {
-        ClusterItem* item = m_data[i];
-        double distance = pointDistance(agent->x, item->x, agent->y, item->y);
-        if (distance <= agent->foragingRange)
-            objectiveFunctionValue++;
-    }
-    objectiveFunctionValue /= m_data.size();
+    double objectiveFunctionValue = (double)dataWithinForagingRange(agent).size() / (double)m_data.size();
 
-    int neighborCount = (int) agentsWithinCrowdingRange(agent).size();
-    double totalScore = objectiveFunctionValue / (double)(neighborCount + 1);
+    double neighborScore = CROWDING_ADVERSION_FACTOR * (double)agentsWithinCrowdingRange(agent).size();
+    double totalScore = objectiveFunctionValue / (double)(neighborScore + 1);
     return totalScore;
 }
 
