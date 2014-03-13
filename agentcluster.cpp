@@ -407,8 +407,8 @@ double AgentCluster::calculateHappiness(Agent *agent) const {
     double objectiveFunctionValue = (double)dataWithinForagingRange(agent).size() / (double)m_data.size();
 
     double neighborScore = CROWDING_ADVERSION_FACTOR * (double)agentsWithinCrowdingRange(agent).size();
-    //double totalScore = objectiveFunctionValue / (double)((neighborScore * PI * pow(agent->foragingRange, 2)) + 1.0);
-    double totalScore = objectiveFunctionValue / (double)(neighborScore + 1.0);
+    double totalScore = objectiveFunctionValue / (double)((neighborScore * PI * pow(agent->foragingRange, 2)) + 1.0);
+    //double totalScore = objectiveFunctionValue / (double)(neighborScore + 1.0);
 
     return totalScore;
 }

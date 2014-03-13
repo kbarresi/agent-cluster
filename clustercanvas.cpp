@@ -123,12 +123,15 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
     QBrush brush(Qt::blue);
     QPen pen(Qt::black, 1);
 
+    double yMidline = m_view->sceneRect().height() / 2;
+
     if (m_dataItems.size() == 0 && SHOW_DATA) {
         for (unsigned int i = 0; i < items->size(); i++) {
             QGraphicsEllipseItemObject* item = new QGraphicsEllipseItemObject(0);
             ClusterItem* clusterItem = (*items)[i];
             double pX = ((maxWidth - minWidth) * (clusterItem->x - m_minX)) / (rangeX) + minWidth;
             double pY = ((maxHeight - minHeight) * (clusterItem->y - m_minY)) / (rangeY) + minHeight;
+            pY -= 2 * (pY - yMidline);
 
             item->setRect(QRectF(pX, pY, 2.5, 2.5));
             item->setBrush(brush);
@@ -167,6 +170,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
         double pX = (((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth) - (radiusItem->boundingRect().width() / 2.0);
         double pY = (((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY) + minHeight) - (radiusItem->boundingRect().height() / 2.0);
+        pY -= 2 * (pY - yMidline);
 
         if (SHOW_PATH) {    //And the path, if selected
             QGraphicsLineItemObject* trail = 0;
@@ -213,9 +217,11 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             double radius = agent->foragingRange;
             double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
             double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+            topLeftY -= 2 * (topLeftY - yMidline);
 
             double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
             double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+            bottomRightY -= 2 * (bottomRightY - yMidline);
 
             double ellipseWidth = bottomRightX - topLeftX;
             double ellipseHeight = bottomRightY - topLeftY;
@@ -230,7 +236,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
                 QPointF startingPoint = QPointF(startX, startY) + QPointF(visualizer->agent->boundingRect().width() / 2, visualizer->agent->boundingRect().height() / 2);
                 mover->setStartValue(startingPoint);
-                mover->setEndValue(QPointF(topLeftX, topLeftY));
+                mover->setEndValue(QPointF(topLeftX, topLeftY) + QPointF(0, visualizer->agent->boundingRect().height()));
                 mover->start(QAbstractAnimation::DeleteWhenStopped);
             } else {
                 radiusItem->setPos(topLeftX, topLeftY);
@@ -239,6 +245,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
 
         pen.setColor(QColor(255, 0, 0, 128));
+        brush.setColor(Qt::transparent);
         if (SHOW_CROWDING_RANGE) {
             radiusItem = 0;
             if (visualizer->crowdingRange)
@@ -254,9 +261,12 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             double radius = agent->crowdingRange;
             double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
             double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+            topLeftY -= 2 * (topLeftY - yMidline);
+
 
             double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
             double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+            bottomRightY -= 2 * (bottomRightY - yMidline);
 
             double ellipseWidth = bottomRightX - topLeftX;
             double ellipseHeight = bottomRightY - topLeftY;
@@ -272,7 +282,7 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
                 QPointF startingPoint = QPointF(startX, startY) + QPointF(visualizer->agent->boundingRect().width() / 2, visualizer->agent->boundingRect().height() / 2);
                 mover->setStartValue(startingPoint);
-                mover->setEndValue(QPointF(topLeftX, topLeftY));
+                mover->setEndValue(QPointF(topLeftX, topLeftY) + QPointF(0, visualizer->agent->boundingRect().height()));
                 mover->start(QAbstractAnimation::DeleteWhenStopped);
             } else {
                 radiusItem->setPos(topLeftX, topLeftY);
