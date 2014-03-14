@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="faso_contour.png">gui/faso_contour.png</file>
+    </qresource>
+</RCC>

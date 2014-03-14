@@ -24,6 +24,7 @@ public slots:
 
 signals:
     void update(std::vector<ClusterItem*>* items, std::vector<Agent*>* agents);
+    void finished();
 
 private:
     int m_iterations;
@@ -65,10 +66,8 @@ private:
     double calculateHappiness(Agent* agent) const;
 
     double averageClusterDistance() const;
-    inline double pointDistance(double x1, double x2, double y1, double y2) const;
 
     void sleep(int milliseconds);
-    inline bool nanTest(double x) { if (x != x) return false; else return true; }
 };
 
 #endif // AGENTCLUSTER_H

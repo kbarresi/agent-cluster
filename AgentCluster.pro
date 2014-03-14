@@ -18,7 +18,8 @@ SOURCES += main.cpp \
     clustercanvas.cpp \
     agentcluster.cpp \
     gui/qgraphicsellipseitemobject.cpp \
-    gui/qgraphicslineitemobject.cpp
+    gui/qgraphicslineitemobject.cpp \
+    faso.cpp
 
 FORMS += \
     clustercanvas.ui
@@ -28,4 +29,8 @@ HEADERS += \
     def.h \
     agentcluster.h \
     gui/qgraphicsellipseitemobject.h \
-    gui/qgraphicslineitemobject.h
+    gui/qgraphicslineitemobject.h \
+    faso.h
+
+RESOURCES += \
+    gfx.qrc

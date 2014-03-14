@@ -121,6 +121,7 @@ void AgentCluster::start() {
 
     //Now we want to see the results;
     emit update(&m_data, &m_agents);
+    emit finished();
 }
 
 /**
@@ -443,17 +444,6 @@ double AgentCluster::averageClusterDistance() const {
     return averageDistance;
 }
 
-/**
- * @brief AgentCluster::pointDistance Euclidean distance between two points.
- * @param x1 X position of object 1
- * @param x2 X position of object 2
- * @param y1 Y position of object 1
- * @param y2 Y position of object 2
- * @return Euclidean distance between the two points.
- */
-double AgentCluster::pointDistance(double x1, double x2, double y1, double y2) const {
-    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
-}
 
 /**
  * @brief AgentCluster::sleep Pauses the current thread for a designated amount of time.

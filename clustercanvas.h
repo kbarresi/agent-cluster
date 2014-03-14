@@ -20,12 +20,12 @@ class ClusterCanvas : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit ClusterCanvas(std::string dataSource, int iterations, int swarmSize = -1, QWidget *parent = 0);
+    explicit ClusterCanvas(QWidget *parent = 0);
     ~ClusterCanvas();
 
 public slots:
     void updateDisplay(std::vector<ClusterItem*>* items, std::vector<Agent*>* agents);
-    void run();
+    void updateDisplay(std::vector<Agent*>* agents);
 
 private:
     struct AgentVisualizer {
@@ -42,9 +42,6 @@ private:
 
 
     Ui::ClusterCanvas *ui;
-
-    AgentCluster* m_cluster;
-    QThread* m_clusterThread;
 
     QGraphicsView* m_view;
     QGraphicsScene* m_scene;

@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <stdlib.h>
+#include <cmath>
 
 #define E 2.718281828459
 #define PI 3.14159265
@@ -77,9 +78,10 @@ static const double RANDOM_MOVE_FACTOR = 1.0;
  */
 static const double CROWDING_ADVERSION_FACTOR = 5.0;
 
-
+static const int CANVAS_SIZE = 800;
 static const int AGENT_SIZE = 7;
-static const int MOVEMENT_DELAY = 1000;         //in milliseconds
+static const int DEFAULT_SWARM_SIZE = 50;
+static const int MOVEMENT_DELAY = 100;         //in milliseconds
 static const bool ANIMATED = true;
 static const bool SHOW_DATA = true;
 static const bool SHOW_FORAGE_RANGE = true;
@@ -126,6 +128,20 @@ static double randomDouble(double min, double max) {
     return min + f * (max - min);
 }
 
+
+/**
+ * @brief pointDistance Euclidean distance between two points.
+ * @param x1 X position of object 1
+ * @param x2 X position of object 2
+ * @param y1 Y position of object 1
+ * @param y2 Y position of object 2
+ * @return Euclidean distance between the two points.
+ */
+static double pointDistance(double x1, double x2, double y1, double y2) {
+    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
+inline bool nanTest(double x) { if (x != x) return false; else return true; }
 
 
 #endif // DEF_H

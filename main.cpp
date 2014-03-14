@@ -1,7 +1,9 @@
 #include <QApplication>
+#include <QThread>
 
 #include "agentcluster.h"
 #include "clustercanvas.h"
+#include "faso.h"
 #include "def.h"
 
 #include <time.h>
@@ -42,10 +44,30 @@ int main(int argc, char *argv[])
         printf("User set swarm size: %i\n", swarmSize);
     }
 
-    std::string dataFile = args.last().toStdString();
+    ClusterCanvas* canvas = new ClusterCanvas();
+    QThread *workThread = new QThread();
 
-    ClusterCanvas* canvas = new ClusterCanvas(dataFile, iterations, swarmSize);
-    canvas->run();
+    if (args.contains("-c")) {  //we're using it to cluster...
+        std::string dataFile = args.last().toStdString();
+        AgentCluster *cluster = new AgentCluster(iterations, swarmSize, 0);
+        cluster->moveToThread(workThread);
+        QObject::connect(workThread, SIGNAL(started()), cluster, SLOT(start()));
+        QObject::connect(cluster, SIGNAL(update(std::vector<ClusterItem*>*,std::vector<Agent*>*)), canvas, SLOT(updateDisplay(std::vector<ClusterItem*>*,std::vector<Agent*>*)));
+        if (!cluster->loadData(dataFile)) {
+            printf("Error: unable to open data file: %s\n\n", dataFile.c_str());
+            return -1;
+        } else
+            printf("...loaded data: %i points\n", (int)cluster->dataCount());
+
+        workThread->start();
+    } else {    //otherwise, use a generic optimization function.
+        FASO* faso = new FASO(iterations, swarmSize);
+        faso->moveToThread(workThread);
+        QObject::connect(workThread, SIGNAL(started()), faso, SLOT(start()));
+        QObject::connect(faso, SIGNAL(update(std::vector<Agent*>*)), canvas, SLOT(updateDisplay(std::vector<Agent*>*)));
+
+        workThread->start();
+    }
 
     return a.exec();
 }
@@ -60,6 +82,7 @@ void printUsage() {
     printf("columns, each representing an x/y position. The values will be graphically ");
     printf("clustered using the AgentCluster algorithm.\n\n");
     printf("Options:\n");
+    printf("\t-c\tUse clustering (FASC) mode. By default, uses generic FASO mode\n");
     printf("\t-n\tNumber of iterations to run\n");
     printf("\t-s\tNumber of agents in swarm\n");
     printf("\n\n\n");

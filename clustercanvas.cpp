@@ -16,7 +16,7 @@
  * @param iterations Number of iterations to run for.
  * @param parent Parent QObject
  */
-ClusterCanvas::ClusterCanvas(std::string dataSource, int iterations, int swarmSize, QWidget *parent) :
+ClusterCanvas::ClusterCanvas(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ClusterCanvas)
 {
@@ -29,21 +29,6 @@ ClusterCanvas::ClusterCanvas(std::string dataSource, int iterations, int swarmSi
 
     m_minX = m_maxX = m_minY = m_maxY = -1;
     m_calculatedDataRange = false;
-
-    m_clusterThread = new QThread(this);
-    m_cluster = new AgentCluster(iterations, swarmSize, 0);
-    m_cluster->moveToThread(m_clusterThread);
-    connect(m_clusterThread, SIGNAL(started()), m_cluster, SLOT(start()));
-    connect(m_cluster, SIGNAL(update(std::vector<ClusterItem*>*,std::vector<Agent*>*)),
-            SLOT(updateDisplay(std::vector<ClusterItem*>*,std::vector<Agent*>*)));
-    if (!m_cluster->loadData(dataSource)) {
-        printf("Error: unable to open data file: %s\n\n", dataSource.c_str());
-        delete m_cluster;
-        delete m_clusterThread;
-        m_cluster = 0;
-        m_clusterThread = 0;
-    } else
-        printf("...loaded data: %i points\n", (int)m_cluster->dataCount());
 }
 
 ClusterCanvas::~ClusterCanvas()
@@ -52,22 +37,13 @@ ClusterCanvas::~ClusterCanvas()
     if (m_scene)
         m_scene->clear();
 
-    if (m_cluster)
-        delete m_cluster;
-
     m_dataItems.clear();
 
 
     delete ui;
 }
 
-/**
- * @brief ClusterCanvas::run Start the AgentCluster object.
- */
-void ClusterCanvas::run() {
-    if (m_cluster && m_clusterThread)
-        m_clusterThread->start();
-}
+
 
 /**
  * @brief ClusterCanvas::updateDisplay Display the given ClusterItems and Agents to a QGraphicsView for
@@ -82,10 +58,9 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
     if (!isVisible()) {
         show();
-        QRectF boundingArea =QRectF(0, 0, 800, 800);
+        QRectF boundingArea =QRectF(0, 0, CANVAS_SIZE, CANVAS_SIZE);
         m_view->setSceneRect(boundingArea);
     }
-
 
     //Shift everything so that (0, 0) is the smallest x/y position. For viewing purposes
     if (!m_calculatedDataRange) {
@@ -142,6 +117,46 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
         }
     }
 
+    updateDisplay(agents);
+}
+
+void ClusterCanvas::updateDisplay(std::vector<Agent *> *agents) {
+
+    bool drawAbsolute = false;
+    double contourScale = 4.0;
+    if (m_maxX == -1 && m_minX == -1 && m_maxY == -1 && m_minY == -1)
+        drawAbsolute = true;
+
+    if (!isVisible() && drawAbsolute) {
+        show();
+        QRectF boundingArea =QRectF(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        m_view->setSceneRect(boundingArea);
+
+        QPixmap contour(":faso_contour.png");
+        contour = contour.scaled(CANVAS_SIZE, CANVAS_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        QGraphicsPixmapItem* item = new QGraphicsPixmapItem(contour);
+        m_scene->addItem(item);
+        item->show();
+        item->setPos(m_view->mapToScene(0, 0));
+    }
+
+    printf("Updating...\n");
+    double rangeX = m_maxX - m_minX;
+    double rangeY = m_maxY - m_minY;
+
+    qreal minWidth = m_view->mapToScene(0, 0).x();
+    qreal minHeight = m_view->mapToScene(0, 0).y();
+    qreal maxWidth =m_view->mapToScene(m_view->width(), m_view->width()).x();
+    qreal maxHeight = m_view->mapToScene(m_view->height(), m_view->height()).x();
+
+    double xConversion = maxWidth / contourScale;
+    double yConversion = maxHeight / contourScale;
+
+    QBrush brush(Qt::blue);
+    QPen pen(Qt::black, 1);
+
+    double yMidline = m_view->sceneRect().height() / 2;
+
     //Go through and draw each agent, and related structures
     for (unsigned int i = 0; i < agents->size(); i++) {
         Agent* agent = (*agents)[i];
@@ -168,9 +183,20 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             visualizer->agent = radiusItem;
         }
 
-        double pX = (((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth) - (radiusItem->boundingRect().width() / 2.0);
-        double pY = (((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY) + minHeight) - (radiusItem->boundingRect().height() / 2.0);
+        double pX;
+        double pY;
+        if (drawAbsolute) {
+            pX = ((agent->x) * xConversion) - (radiusItem->boundingRect().width() / 2.0) + (CANVAS_SIZE / 2);
+            pY = ((agent->y) * yConversion) - (radiusItem->boundingRect().width() / 2.0) + (CANVAS_SIZE / 2);
+        } else {
+            pX = (((maxWidth - minWidth) * (agent->x - m_minX)) / (rangeX) + minWidth) - (radiusItem->boundingRect().width() / 2.0);
+            pY = (((maxHeight - minHeight) * (agent->y - m_minY)) / (rangeY) + minHeight) - (radiusItem->boundingRect().height() / 2.0);
+        }
         pY -= 2 * (pY - yMidline);
+
+        Q_ASSERT_X(nanTest(pX), "Failed NaN", __FUNCTION__);
+        Q_ASSERT_X(nanTest(pY), "Failed NaN", __FUNCTION__);
+
 
         if (SHOW_PATH) {    //And the path, if selected
             QGraphicsLineItemObject* trail = 0;
@@ -215,13 +241,32 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
             }
 
             double radius = agent->foragingRange;
-            double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
-            double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
-            topLeftY -= 2 * (topLeftY - yMidline);
 
-            double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
-            double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
-            bottomRightY -= 2 * (bottomRightY - yMidline);
+            double topLeftX;
+            double topLeftY;
+            double bottomRightX;
+            double bottomRightY;
+            if (drawAbsolute) {
+                topLeftX = (pX + (visualizer->agent->boundingRect().width() / 2)) - (radius * xConversion);
+                topLeftY = (pY - (visualizer->agent->boundingRect().height() / 2)) - (radius * yConversion);
+                bottomRightX = (pX + (visualizer->agent->boundingRect().width() / 2)) + (radius * xConversion);
+                bottomRightY = (pY - (visualizer->agent->boundingRect().height() / 2)) + (radius * yConversion);
+            } else {
+                topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
+                topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+                bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
+                bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+                topLeftY -= 2 * (topLeftY - yMidline);
+                bottomRightY -= 2 * (bottomRightY - yMidline);
+
+            }
+
+
+            Q_ASSERT_X(nanTest(topLeftX), "Failed NaN", __FUNCTION__);
+            Q_ASSERT_X(nanTest(topLeftY), "Failed NaN", __FUNCTION__);
+            Q_ASSERT_X(nanTest(bottomRightX), "Failed NaN", __FUNCTION__);
+            Q_ASSERT_X(nanTest(bottomRightY), "Failed NaN", __FUNCTION__);
+
 
             double ellipseWidth = bottomRightX - topLeftX;
             double ellipseHeight = bottomRightY - topLeftY;
@@ -259,14 +304,30 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
                 visualizer->crowdingRange = radiusItem;
             }
             double radius = agent->crowdingRange;
-            double topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
-            double topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
-            topLeftY -= 2 * (topLeftY - yMidline);
+            double topLeftX;
+            double topLeftY;
+            double bottomRightX;
+            double bottomRightY;
+            if (drawAbsolute) {
+                topLeftX = (pX + (visualizer->agent->boundingRect().width() / 2)) - (radius * xConversion);
+                topLeftY = (pY - (visualizer->agent->boundingRect().height() / 2)) - (radius * yConversion);
+                bottomRightX = (pX + (visualizer->agent->boundingRect().width() / 2)) + (radius * xConversion);
+                bottomRightY = (pY - (visualizer->agent->boundingRect().height() / 2)) + (radius * yConversion);
+            } else {
+                topLeftX = ((maxWidth - minWidth) * ((agent->x - radius) - m_minX)) / (rangeX) + minWidth;
+                topLeftY = ((maxHeight - minHeight) * ((agent->y - radius) - m_minY)) / (rangeY) + minHeight;
+                bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
+                bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
+                topLeftY -= 2 * (topLeftY - yMidline);
+                bottomRightY -= 2 * (bottomRightY - yMidline);
+            }
 
 
-            double bottomRightX = ((maxWidth - minWidth) * ((agent->x + radius) - m_minX)) / (rangeX) + minWidth;
-            double bottomRightY = ((maxHeight - minHeight) * ((agent->y + radius) - m_minY)) / (rangeY) + minHeight;
-            bottomRightY -= 2 * (bottomRightY - yMidline);
+            Q_ASSERT_X(nanTest(topLeftX), "Failed NaN", __FUNCTION__);
+            Q_ASSERT_X(nanTest(topLeftY), "Failed NaN", __FUNCTION__);
+            Q_ASSERT_X(nanTest(bottomRightX), "Failed NaN", __FUNCTION__);
+            Q_ASSERT_X(nanTest(bottomRightY), "Failed NaN", __FUNCTION__);
+
 
             double ellipseWidth = bottomRightX - topLeftX;
             double ellipseHeight = bottomRightY - topLeftY;
@@ -290,4 +351,6 @@ void ClusterCanvas::updateDisplay(std::vector<ClusterItem*>* items, std::vector<
 
         }
     }
+    repaint();
+
 }

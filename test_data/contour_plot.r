@@ -7,7 +7,7 @@ sixHumpCamelFunction = function(x, y) {
 }
 
 styblinksiFunction = function(x, y) {
-  return ( ((x^4 - 16*x^2 + 5*x) + (y^4 - 16*y^2 + 5*y)) / 2   )
+  return (((x^4 - 16*x^2 + 5*x) + (y^4 - 16*y^2 + 5*y)) / 2)
 }
 upperBoundX = 5;
 upperBoundY = 5;
