@@ -138,7 +138,7 @@ void AgentCluster::convergencePhase() {
         }
 
         printf("Finished iteration %i...\n", i);
-        if (i % 1 == 0) {
+        if (i % UPDATE_RATE == 0) {
             emit update(&m_data, &m_agents);
             printf("\t...updated display\n");
             sleep(MOVEMENT_DELAY);

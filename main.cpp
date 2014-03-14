@@ -23,6 +23,9 @@ int main(int argc, char *argv[])
     }
 
     int iterations = 100;
+    int instances = 1;
+    int swarmSize = -1;
+
     if (args.contains("-n")) {
         int iterationsIndex =args.indexOf("-n") + 1;
         if (iterationsIndex >= args.size()) {
@@ -33,7 +36,6 @@ int main(int argc, char *argv[])
         iterations = args.at(iterationsIndex).toInt();
         printf("User set iterations: %i\n", iterations);
     }
-    int swarmSize = -1;
     if (args.contains("-s")) {
         int swarmSizeIndex = args.indexOf("-s") + 1;
         if (swarmSizeIndex >= args.size()) {
@@ -42,6 +44,15 @@ int main(int argc, char *argv[])
         }
         swarmSize = args.at(swarmSizeIndex).toInt();
         printf("User set swarm size: %i\n", swarmSize);
+    }
+    if (args.contains("-i")) {
+        int instanceIndex = args.indexOf("-i") + 1;
+        if (instanceIndex >= args.size()) {
+            printf("Error: instance count not specified\n\n");
+            return 1;
+        }
+        instances = args.at(instanceIndex).toInt();
+        printf("User set instance count: %i\n", instances);
     }
 
     ClusterCanvas* canvas = new ClusterCanvas();
@@ -62,13 +73,11 @@ int main(int argc, char *argv[])
         workThread->start();
     } else {    //otherwise, use a generic optimization function.
         TestFunction type = Ackley;
-
-        FASO* faso = new FASO(iterations, swarmSize, type);
+        FASO* faso = new FASO(iterations, instances, swarmSize, type);
         canvas->setFunction(type);
         faso->moveToThread(workThread);
         QObject::connect(workThread, SIGNAL(started()), faso, SLOT(start()));
         QObject::connect(faso, SIGNAL(update(std::vector<Agent*>*)), canvas, SLOT(updateDisplay(std::vector<Agent*>*)));
-
         workThread->start();
     }
 
@@ -88,5 +97,6 @@ void printUsage() {
     printf("\t-c\tUse clustering (FASC) mode. By default, uses generic FASO mode\n");
     printf("\t-n\tNumber of iterations to run\n");
     printf("\t-s\tNumber of agents in swarm\n");
+    printf("\t-i\tNumber of swarm instances whose results should be averaged together");
     printf("\n\n\n");
 }

@@ -2,6 +2,8 @@
 #include "def.h"
 
 #include <QMutex>
+#include <QFile>
+#include <QTextStream>
 #include <cmath>
 #include <stdio.h>
 
@@ -10,13 +12,18 @@
  * multimodal optimization profile.
  * @param parent QObject parent.
  */
-FASO::FASO(int iterations, int swarmSize, TestFunction selectedFunction, QObject *parent) :
+FASO::FASO(int iterations,
+           int instances,
+           int swarmSize,
+           TestFunction selectedFunction,
+           QObject *parent) :
     QObject(parent)
 {
     m_testFunction = selectedFunction;
     m_iterations = iterations;
     m_swarmSize = swarmSize;
     m_lowestValue = landscape(0, 0);
+    m_instances = instances;
 }
 FASO::~FASO() {
 }
@@ -31,11 +38,15 @@ void FASO::start() {
     m_minRange = m_agentSensorRange * 0.2;
     m_agentStepSize = m_agentSensorRange * STEP_SIZE_TO_SENSOR_RATIO;
 
-
     if (m_swarmSize == -1) {
         m_swarmSize = DEFAULT_SWARM_SIZE;
     }
-    for (int i = 0; i < m_swarmSize; i++) {
+
+    double* xPositions = (double*) calloc(m_swarmSize * m_instances, sizeof(double));
+    double* yPositions = (double*) calloc(m_swarmSize * m_instances, sizeof(double));
+
+
+    for (int i = 0; i < m_swarmSize; i++) { //create the swarm...
         Agent* agent = new Agent();
         agent->x = randomDouble(m_dataMinX, m_dataMaxX);
         agent->y = randomDouble(m_dataMinY, m_dataMaxY);
@@ -43,26 +54,54 @@ void FASO::start() {
     }
     printf("Created a swarm containing %i agents...\n", m_swarmSize);
 
+    for (int n = 0; n < m_instances; n++) {
 
-    for (int i = 0; i < m_iterations; i++) {
-        updateHappiness();
-        updateRanges();
-        for (unsigned int j = 0; j < m_agents.size(); j++) {
-            Agent* agent= m_agents[j];
-            move(agent);
+
+        for (int i = 0; i < m_iterations; i++) {
+            updateHappiness();
+            updateRanges();
+            for (unsigned int j = 0; j < m_agents.size(); j++) {
+                Agent* agent= m_agents[j];
+                move(agent);
+            }
+
+            printf("Finished iteration %i...\n", i);
+            if (i % UPDATE_RATE == 0) {
+                emit update(&m_agents);
+                printf("\tupdating...");
+            }
+            sleep(MOVEMENT_DELAY);
         }
 
-        printf("Finished iteration %i...\n", i);
-        emit update(&m_agents);
-        printf("\tupdating...");
-        sleep(MOVEMENT_DELAY);
+        for (unsigned int i = 0; i < m_agents.size(); i++) { //save positions...
+            Agent *a = m_agents[i];
+            int index = (n * m_agents.size()) + i;
+            xPositions[index] = a->x;
+            yPositions[index] = a->y;
+            a->x = randomDouble(m_dataMinX, m_dataMaxX);
+            a->y = randomDouble(m_dataMinY, m_dataMaxY);
+        }
+
+        printf("Finished instance %i\n", n);
     }
 
-    printf("POSITIONS\n\n");
-    for (unsigned int i = 0; i < m_agents.size(); i++) {
-        Agent* a = m_agents[i];
-        printf("%4.2f,%4.2f\n", a->x, a->y);
+    QFile file("../AgentCluster/test_data/results.csv");
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream stream(&file);
+        for (int i = 0; i < (m_swarmSize * m_instances); i++) {
+            stream << xPositions[i] << "," << yPositions[i] << "\n";
+        }
+        file.close();
+    } else {
+        printf("POSITIONS\n\n");
+        for (int i = 0; i < (m_swarmSize * m_instances); i++)
+            printf("%4.2f,%4.2f\n", xPositions[i], yPositions[i]);
     }
+
+
+
+    free(xPositions);
+    free(yPositions);
     printf("\n\nFinished...\n");
     emit finished();
 }

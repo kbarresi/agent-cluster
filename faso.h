@@ -13,7 +13,11 @@ class FASO : public QObject
     Q_OBJECT
 public:
 
-    FASO(int iterations, int swarmSize = -1, TestFunction selectedFunction = Styblinski, QObject *parent = 0);
+    FASO(int iterations,
+         int instances = 1,
+         int swarmSize = -1,
+         TestFunction selectedFunction = Styblinski,
+         QObject *parent = 0);
     ~FASO();
 
 public slots:
@@ -27,6 +31,7 @@ private:
     std::vector<Agent*> m_agents;
     int m_swarmSize;
     int m_iterations;
+    int m_instances;
 
     TestFunction m_testFunction;
     double m_dataMinX;

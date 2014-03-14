@@ -23,12 +23,12 @@ y = seq(from = lowerBoundY, to = upperBoundY, length.out = samples)
 z = matrix(0, samples, samples)
 for (i in 0:samples) {
   for (j in 0:samples) {
-    z[i,j] = styblinksiFunction(x[i], y[j])
+    z[i,j] = ackleyFunction(x[i], y[j])
   }
 }
 
 if (showPoints) {
-  pointData = read.csv("data.csv", sep = ",");
+  pointData = read.csv("results.csv", sep = ",");
   filled.contour(x, y, z, 
                  color.palette = heat.colors,
                  plot.axes = { points(pointData[,1], pointData[,2]); axis(1); axis(2) })
