@@ -10,9 +10,10 @@
  * multimodal optimization profile.
  * @param parent QObject parent.
  */
-FASO::FASO(int iterations, int swarmSize, QObject *parent) :
+FASO::FASO(int iterations, int swarmSize, TestFunction selectedFunction, QObject *parent) :
     QObject(parent)
 {
+    m_testFunction = selectedFunction;
     m_iterations = iterations;
     m_swarmSize = swarmSize;
     m_lowestValue = landscape(0, 0);
@@ -26,7 +27,7 @@ void FASO::start() {
     m_dataMaxX = 5;
     m_dataMaxY = 5;
 
-    m_agentSensorRange = 0.25;       //CHECK THIS OUT YO
+    m_agentSensorRange = 0.5;       //CHECK THIS OUT YO
     m_minRange = m_agentSensorRange * 0.2;
     m_agentStepSize = m_agentSensorRange * STEP_SIZE_TO_SENSOR_RATIO;
 
@@ -79,13 +80,22 @@ void FASO::updateHappiness() {
 double FASO::calculateHappiness(Agent *agent) {
     //h(i) = O(p_i) / (|A(p_i, r_c^i)| + 1)
 
-    double objectiveFunctionValue = 1.0 / (landscape(agent->x, agent->y) - m_lowestValue + 1.0);  //we want to minimize, so do 1/function value
+    double objectiveFunctionValue = objectiveFunction(agent->x, agent->y);
     double neighborScore = CROWDING_ADVERSION_FACTOR * (double)agentsWithinCrowdingRange(agent).size();
 
     double totalScore = objectiveFunctionValue / (neighborScore + 1.0);
     return totalScore;
 }
+double FASO::objectiveFunction(double x, double y) {
+    double result = landscape(x, y);
+    if (result < m_lowestValue) {
+        m_lowestValue = result;
+        printf("New lowest: %4.2f\n", m_lowestValue);
+        updateHappiness();
+    }
 
+    return 1.0 / (result - m_lowestValue);
+}
 
 
 
@@ -119,9 +129,14 @@ void FASO::move(Agent *agent) {
 
         double unitX = gradientX(agent->x, agent->y);
         double unitY = gradientY(agent->x, agent->y);
+        if (unitX == 0.0 && unitY == 0.0) { //already at a max/min? move randomly
+            moveRandomly(agent);
+            return;
+        }
+
         double norm = sqrt(pow(unitX, 2) + pow(unitY, 2));
-        unitX /= norm;
-        unitY /= norm;
+        unitX /= -norm;     //we want to go down the slope...
+        unitY /= -norm;
 
         double magnitude = randomDouble(0.1, 1);
         double newX = agent->x + (unitX * magnitude);
@@ -213,21 +228,57 @@ void FASO::sleep(int milliseconds) {
     mut.unlock();
 }
 
-double FASO::landscape(double x, double y) {
-    //(((x^4 - 16*x^2 + 5*x) + (y^4 - 16*y^2 + 5*y)) / 2)
-    double result = (((pow(x, 4) - 16.0 * pow(x, 2) + 5.0 * x) + (pow(y, 4) - 16.0 * pow(y, 2) + 5.0 * y)) * 0.5);
-    if (result < m_lowestValue) {
-        m_lowestValue = result;
-        updateHappiness();
-    }
+double FASO::landscape(double x, double y) const {
+    if (m_testFunction == Styblinski)
+        return styblinksi(x, y);
+    else if (m_testFunction == Ackley)
+        return ackley(x, y);
+    else
+        return styblinksi(x, y);
+}
+double FASO::gradientX(double x, double y) const {
+    if (m_testFunction == Styblinski)
+        return styblinksiGradientX(x);
+    else if (m_testFunction == Ackley)
+        return ackleyGradientX(x, y);
+    else
+        return styblinksiGradientX(x);
+}
+double FASO::gradientY(double x, double y) const {
+    if (m_testFunction == Styblinski)
+        return styblinksiGradientY(y);
+    else if (m_testFunction == Ackley)
+        return ackleyGradientY(x, y);
+    else
+        return styblinksiGradientY(y);
+}
 
-    return result;
+
+double FASO::styblinksi(double x, double y) {
+    return (((pow(x, 4) - 16.0 * pow(x, 2) + 5.0 * x) + (pow(y, 4) - 16.0 * pow(y, 2) + 5.0 * y)) * 0.5);
 }
-double FASO::gradientX(double x, double y) {
-    //(x^5/5 - 16x^3/3 + 5x^2/2 + xy(y^3 - 16y + 5)) / 2;
-    return ((pow(x, 5)/5.0) - ((16 * pow(x, 3)) / 3.0) + ((5 * pow(x, 2)) / 2.0) + x*y*(pow(y, 3) - (16.0 * y) + 5.0)) * 0.5;
+double FASO::styblinksiGradientX(double x) {
+    //dz/dx = 2x^3 -16x +5/2
+    return (2.0 * pow(x, 3)) - (16.0 * x) + (2.5);
 }
-double FASO::gradientY(double x, double y) {
-    //(x^4y - 16x^2y + 5xy + y^5/5 - 16y^3/3 + 5y^2/2) / 2
-    return ((y * pow(x, 4)) - (16.0 * y * pow(x, 2)) + (5 * x * y) + (pow(y, 5)/5.0) - ((16 * pow(y, 3))/3.0) + ((5 * pow(y, 2))/2.0)) * 0.5;
+double FASO::styblinksiGradientY(double y) {
+    //2y^3 - 16y +5/2
+    return (2.0 * pow(y, 3)) - (16.0 * y) + (2.5);
+}
+
+double FASO::ackley(double x, double y) {
+    // (-20 * exp(-0.2 * sqrt(0.5 * (x^2 + y^2))) - exp(0.5*(cos(2 * pi * x) + cos(2 * pi * y))) + 20 + exp(1))
+    return (-20.0 * pow(E, (-0.2 * sqrt(0.5 * (pow(x, 2) + pow(y, 2))))) - pow(E, 0.5 * (cos(2.0 * PI * x) + cos(2.0 * PI * y))) + 20.0 + E);
+}
+double FASO::ackleyGradientX(double x, double y) {
+    //dz/dx = ((2.82843 * x * exp(-0.141421 * sqrt(x^2 + y^2))/(sqrt(x^2 + y^2))) + pi*sin(2*pi*x)*exp(0.5(cos(2*pi*x) + cos(2*pi*y)))
+    double x2 = pow(x, 2);
+    double y2 = pow(y, 2);
+    return ((2.82843 * x * exp(-0.141421 * sqrt(x2 + y2)))/(sqrt(x2 + y2))) + PI*sin(2*PI*x)*exp(0.5 * (cos(2*PI*x) + cos(2*PI*y)));
+}
+double FASO::ackleyGradientY(double x, double y) {
+    //dz/dy = ((2.82843 * y * exp(-0.141421 * sqrt(x^2 + y^2))/(sqrt(x^2 + y^2))) + pi*sin(2*pi*y)*exp(0.5(cos(2*pi*x) + cos(2*pi*y)))
+    double x2 = pow(x, 2);
+    double y2 = pow(y, 2);
+    return ((2.82843 * y * exp(-0.141421 * sqrt(x2 + y2)))/(sqrt(x2 + y2))) + PI*sin(2*PI*y)*exp(0.5 * (cos(2*PI*x) + cos(2*PI*y)));
 }

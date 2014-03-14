@@ -9,6 +9,8 @@ sixHumpCamelFunction = function(x, y) {
 styblinksiFunction = function(x, y) {
   return (((x^4 - 16*x^2 + 5*x) + (y^4 - 16*y^2 + 5*y)) / 2)
 }
+
+showPoints = 1;
 upperBoundX = 5;
 upperBoundY = 5;
 lowerBoundX = -5;
@@ -25,4 +27,11 @@ for (i in 0:samples) {
   }
 }
 
-filled.contour(x, y, z, color.palette = heat.colors)
+if (showPoints) {
+  pointData = read.csv("data.csv", sep = ",");
+  filled.contour(x, y, z, 
+                 color.palette = heat.colors,
+                 plot.axes = { points(pointData[,1], pointData[,2]); axis(1); axis(2) })
+} else {
+  filled.contour(x, y, z, color.palette = heat.colors);
+}

@@ -81,7 +81,7 @@ static const double CROWDING_ADVERSION_FACTOR = 5.0;
 static const int CANVAS_SIZE = 800;
 static const int AGENT_SIZE = 7;
 static const int DEFAULT_SWARM_SIZE = 50;
-static const int MOVEMENT_DELAY = 100;         //in milliseconds
+static const int MOVEMENT_DELAY = 50;         //in milliseconds
 static const bool ANIMATED = true;
 static const bool SHOW_DATA = true;
 static const bool SHOW_FORAGE_RANGE = true;
@@ -142,6 +142,5 @@ static double pointDistance(double x1, double x2, double y1, double y2) {
 }
 
 inline bool nanTest(double x) { if (x != x) return false; else return true; }
-
 
 #endif // DEF_H

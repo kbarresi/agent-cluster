@@ -61,7 +61,10 @@ int main(int argc, char *argv[])
 
         workThread->start();
     } else {    //otherwise, use a generic optimization function.
-        FASO* faso = new FASO(iterations, swarmSize);
+        TestFunction type = Ackley;
+
+        FASO* faso = new FASO(iterations, swarmSize, type);
+        canvas->setFunction(type);
         faso->moveToThread(workThread);
         QObject::connect(workThread, SIGNAL(started()), faso, SLOT(start()));
         QObject::connect(faso, SIGNAL(update(std::vector<Agent*>*)), canvas, SLOT(updateDisplay(std::vector<Agent*>*)));

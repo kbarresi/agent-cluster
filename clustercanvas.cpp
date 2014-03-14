@@ -29,6 +29,7 @@ ClusterCanvas::ClusterCanvas(QWidget *parent) :
 
     m_minX = m_maxX = m_minY = m_maxY = -1;
     m_calculatedDataRange = false;
+    m_function = Styblinski;
 }
 
 ClusterCanvas::~ClusterCanvas()
@@ -132,7 +133,15 @@ void ClusterCanvas::updateDisplay(std::vector<Agent *> *agents) {
         QRectF boundingArea =QRectF(0, 0, CANVAS_SIZE, CANVAS_SIZE);
         m_view->setSceneRect(boundingArea);
 
-        QPixmap contour(":faso_contour.png");
+        QPixmap contour;     //Pick a contour map to overlay on
+        if (m_function == Styblinski) {
+            contour.load(":styblinski_contour.png");
+            contourScale = 5.0;
+        } else if (m_function == Ackley) {
+            contour.load(":ackley_contour.png");
+            contourScale = 4.0;
+        }
+
         contour = contour.scaled(CANVAS_SIZE, CANVAS_SIZE, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         QGraphicsPixmapItem* item = new QGraphicsPixmapItem(contour);
         m_scene->addItem(item);

@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="faso_contour.png">gui/faso_contour.png</file>
+        <file alias="ackley_contour.png">gui/ackley_contour.png</file>
+        <file alias="styblinski_contour.png">gui/styblinski_contour.png</file>
     </qresource>
 </RCC>

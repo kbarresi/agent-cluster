@@ -5,12 +5,15 @@
 #include <QObject>
 #include <vector>
 
+enum TestFunction { Styblinski, Ackley };
+
 class Agent;
 class FASO : public QObject
 {
     Q_OBJECT
 public:
-    FASO(int iterations, int swarmSize = -1, QObject *parent = 0);
+
+    FASO(int iterations, int swarmSize = -1, TestFunction selectedFunction = Styblinski, QObject *parent = 0);
     ~FASO();
 
 public slots:
@@ -25,6 +28,7 @@ private:
     int m_swarmSize;
     int m_iterations;
 
+    TestFunction m_testFunction;
     double m_dataMinX;
     double m_dataMinY;
     double m_dataMaxX;
@@ -37,6 +41,7 @@ private:
 
     void updateHappiness();
     double calculateHappiness(Agent *agent);
+    double objectiveFunction(double x, double y);
 
     void updateRanges();
     void move(Agent* agent);
@@ -48,9 +53,17 @@ private:
     std::vector<Agent*> agentsWithinRange(Agent* agent, double range) const;
 
     void sleep(int millis);
-    double landscape(double x, double y);
-    static double gradientX(double x, double y);
-    static double gradientY(double x, double y);
+    double landscape(double x, double y) const;
+    double gradientX(double x, double y) const ;
+    double gradientY(double x, double y) const;
+
+    static double styblinksi(double x, double y);
+    static double styblinksiGradientX(double x);
+    static double styblinksiGradientY(double y);
+
+    static double ackley(double x, double y);
+    static double ackleyGradientX(double x, double y);
+    static double ackleyGradientY(double x, double y);
 };
 
 #endif // FASO_H

@@ -2,6 +2,7 @@
 #define CLUSTERCANVAS_H
 
 #include "def.h"
+#include "faso.h"
 #include "gui/qgraphicsellipseitemobject.h"
 #include "gui/qgraphicslineitemobject.h"
 
@@ -22,6 +23,7 @@ class ClusterCanvas : public QMainWindow
 public:
     explicit ClusterCanvas(QWidget *parent = 0);
     ~ClusterCanvas();
+    void setFunction(TestFunction function) { m_function = function; }
 
 public slots:
     void updateDisplay(std::vector<ClusterItem*>* items, std::vector<Agent*>* agents);
@@ -40,6 +42,7 @@ private:
         }
     };
 
+    TestFunction m_function;
 
     Ui::ClusterCanvas *ui;
 
