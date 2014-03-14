@@ -17,6 +17,7 @@ It also contains an implementation of Foraging Agent Swarm Clustering (FASC), an
 
 Options
 
-    -c	Use clustering (FASC) mode. If used, data.csv must be given.
-    -n	Number of iterations to run
-    -s	Number of agents in swarm
+    -c	Use clustering (FASC) mode. If used, data.csv must be given. Default: false
+    -n	Number of iterations to run Default: 100
+    -s	Number of agents in swarm. Default: 50
+    -i  Number of swarm instances to run. Default: 1
