@@ -18,7 +18,7 @@ struct ClusterItem {
     double y;
 
     ClusterItem() {
-        group = 0;
+        group = -1;
         x = 0;
         y = 0;
     }
@@ -37,10 +37,25 @@ struct Agent {
     double crowdingRange;
     double selectionRange;
 
+    bool visited;
+    int cluster;
+
     Agent() {
         x = y = 0;
+        cluster = -1;
         happiness = 0.0;
         foragingRange = selectionRange = crowdingRange = 0.0;
+        visited = false;
+    }
+};
+
+struct Cluster {
+    int id;
+    std::vector<Agent*> agents;
+    std::vector<ClusterItem*> points;
+
+    Cluster() {
+        id = 0;
     }
 };
 
@@ -51,15 +66,15 @@ struct Agent {
 /* The swarm size compared to the data set size. For example, a value of 0.5 means that the swarm
  * size will be half of the size of the given data set.
  */
-static const double SWARM_SIZE_FACTOR = 0.5;
+static const double SWARM_SIZE_FACTOR = 1;
 
 /* The ratio of the average datapoint-to-datapoint distance to agent sensor range.
  */
-static const double SENSOR_TO_AVG_DIST_RATIO  = 0.4;
+static const double SENSOR_TO_AVG_DIST_RATIO  = 0.5;
 
 /* The ratio of the crowding range to the foraging range.
  */
-static const double CROWDING_TO_FORAGE_DIST_RATIO = 0.4;
+static const double CROWDING_TO_FORAGE_DIST_RATIO = 0.2;
 
 /* The ratio of agent sensor range to agent step size.
  */
@@ -76,17 +91,18 @@ static const double RANDOM_MOVE_FACTOR = 1.0;
 /* The amount agents dislike being crowded together. This is used as a constant in a decay function,
  * and determines how strongly agent crowding affects happiness.
  */
-static const double CROWDING_ADVERSION_FACTOR = 5.0;
+static const double CROWDING_ADVERSION_FACTOR = 10.0;
 
 static const int CANVAS_SIZE = 800;
-static const int AGENT_SIZE = 7;
+static const int AGENT_SIZE = 10;
+static const int DATAPOINT_SIZE = 10;
 static const int DEFAULT_SWARM_SIZE = 50;
-static const int MOVEMENT_DELAY = 0;         //in milliseconds
-static const int UPDATE_RATE = 100; //update display every x iterations
-static const bool ANIMATED = false;
+static const int MOVEMENT_DELAY = 100;         //in milliseconds
+static const int UPDATE_RATE = 5; //update display every x iterations
+static const bool ANIMATED = true;
 static const bool SHOW_DATA = true;
 static const bool SHOW_FORAGE_RANGE = true;
-static const bool SHOW_CROWDING_RANGE = true;
+static const bool SHOW_CROWDING_RANGE = false;
 static const bool SHOW_PATH = false;
 
 //UTIL FUNCTIONS

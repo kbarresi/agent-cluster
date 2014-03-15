@@ -24,6 +24,7 @@ public slots:
 
 signals:
     void update(std::vector<ClusterItem*>* items, std::vector<Agent*>* agents);
+    void setClusters(std::vector<Cluster*>* clusters);
     void finished();
 
 private:
@@ -32,6 +33,7 @@ private:
 
     std::vector<Agent*> m_agents;
     std::vector<ClusterItem*> m_data;
+    std::vector<Cluster*> m_clusters;
 
 
     double m_dataMinX;
@@ -65,6 +67,7 @@ private:
 
     double calculateHappiness(Agent* agent) const;
 
+    void addToCluster(Cluster* cluster, Agent* agent, std::vector<Agent*> neighbors) const;
     double averageClusterDistance() const;
 
     void sleep(int milliseconds);

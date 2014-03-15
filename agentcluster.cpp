@@ -118,9 +118,6 @@ void AgentCluster::start() {
     consolidationPhase();
     assignmentPhase();
 
-
-    //Now we want to see the results;
-    emit update(&m_data, &m_agents);
     emit finished();
 }
 
@@ -150,16 +147,93 @@ void AgentCluster::convergencePhase() {
  * @brief AgentCluster::consolidationPhase Runs the consolidation phase of the AgentSwarm algorithm.
  */
 void AgentCluster::consolidationPhase() {
-
+    for (std::vector<Agent*>::iterator i = m_agents.begin(); i != m_agents.end(); i++) {
+        Agent* agent = (*i);
+        if (dataWithinForagingRange(agent).size() < 1) {
+            m_agents.erase(i);
+            delete agent;
+        }
+    }
 }
+
 
 /**
  * @brief AgentCluster::assignmentPhase Runs the assignment phase of the AgentSwarm algorithm.
  */
 void AgentCluster::assignmentPhase() {
+    for (unsigned int i = 0; i < m_agents.size(); i++) {
+        Agent* agent = m_agents[i];
+        if (agent->visited)
+            continue;
 
+        agent->visited = true;
+        Cluster* cluster = new Cluster();
+        cluster->id = m_clusters.size();
+        m_clusters.push_back(cluster);
+        std::vector<Agent*> neighbors = agentsWithinRange(agent, agent->foragingRange * 2.0);
+        addToCluster(cluster, agent, neighbors);
+    }
+
+    for (unsigned int i = 0; i < m_clusters.size(); i++) {
+        Cluster* cluster = m_clusters[i];
+        for (unsigned int j = 0; j < cluster->agents.size(); j++) {
+            Agent* agent = cluster->agents[j];
+            std::vector<ClusterItem*> items = dataWithinForagingRange(agent);
+            for (unsigned int k = 0; k < items.size(); k++) {
+                ClusterItem* item = items[k];
+                if (item->group != -1)
+                    continue;
+                item->group = cluster->id;
+                cluster->points.push_back(item);
+            }
+        }
+    }
+
+    for (unsigned int i = 0; i < m_data.size(); i++) {   //assign unassigned points to the closest groups
+        ClusterItem* item = m_data[i];
+        if (item->group != -1)
+            continue;
+        Agent* closestAgent = 0;
+        double closestDistance = -1;
+        for (unsigned int j = 0; j < m_agents.size(); j++) {
+            Agent* current = m_agents[j];
+            double dist = pointDistance(current->x, item->x, current->y, item->y);
+            if (dist < closestDistance || closestDistance == -1) {
+                closestAgent = current;
+                closestDistance = dist;
+            }
+        }
+        item->group = closestAgent->cluster;
+        for (unsigned int j = 0; j < m_clusters.size(); j++) {
+            Cluster* cluster = m_clusters[j];
+            if (cluster->id == item->group)
+                cluster->points.push_back(item);
+        }
+    }
+    emit setClusters(&m_clusters);
 }
 
+/**
+ * @brief AgentCluster::addToCluster Expands a cluster from an agent with the given neighborhood.
+ * @param cluster  Cluster to add to.
+ * @param agent Starting agent.
+ * @param neighbors Neighbors of the starting agent.
+ */
+void AgentCluster::addToCluster(Cluster* cluster, Agent* agent, std::vector<Agent*> neighbors) const {
+    cluster->agents.push_back(agent);
+    agent->cluster = cluster->id;
+    for (unsigned int i = 0; i < neighbors.size(); i++) {
+        Agent* neighbor = neighbors[i];
+        if (neighbor->visited)
+            continue;
+        neighbor->visited = true;
+        std::vector<Agent*> nextNeighbors = agentsWithinRange(neighbor, neighbor->foragingRange * 2.0);
+        for (unsigned int j = 0; j < nextNeighbors.size(); j++)
+            neighbors.push_back(nextNeighbors[j]);
+        cluster->agents.push_back(neighbor);
+        neighbor->cluster = cluster->id;
+    }
+}
 
 /**
  * @brief AgentCluster::updateRanges Update the effective and selection ranges of all agents.

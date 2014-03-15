@@ -16,3 +16,5 @@
 html/
 AgentCluster.pro.user
 test_data/artificialData.csv
+test_data/cluster_results.csv
+test_data/results.csv

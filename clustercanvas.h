@@ -28,6 +28,7 @@ public:
 public slots:
     void updateDisplay(std::vector<ClusterItem*>* items, std::vector<Agent*>* agents);
     void updateDisplay(std::vector<Agent*>* agents);
+    void setClusters(std::vector<Cluster*>* clusters);
 
 private:
     struct AgentVisualizer {
@@ -39,6 +40,24 @@ private:
         AgentVisualizer() {
             agent = forageRange = crowdingRange = 0;
             trail = 0;
+        }
+        ~AgentVisualizer() {
+            if (agent) {
+                agent->hide();
+                delete agent;
+            }
+            if (forageRange) {
+                forageRange->hide();
+                delete forageRange;
+            }
+            if (crowdingRange) {
+                crowdingRange->hide();
+                delete crowdingRange;
+            }
+            if (trail) {
+                trail->hide();
+                delete trail;
+            }
         }
     };
 

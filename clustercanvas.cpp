@@ -5,6 +5,8 @@
 #include <QGraphicsEllipseItem>
 #include <QPropertyAnimation>
 #include <QThread>
+#include <QFile>
+#include <QTextStream>
 
 
 #include <stdio.h>
@@ -362,4 +364,71 @@ void ClusterCanvas::updateDisplay(std::vector<Agent *> *agents) {
     }
     repaint();
 
+}
+
+void ClusterCanvas::setClusters(std::vector<Cluster*>* clusters) {
+    printf("\n\nReceived %i clusters\n", clusters->size());
+    for (unsigned int i = 0; i < m_dataItems.size(); i++) {
+        QGraphicsEllipseItemObject* item = m_dataItems[i];
+        item->hide();
+        m_scene->removeItem(item);
+        delete item;
+    }
+    m_dataItems.clear();
+
+
+    for (QHash<Agent*, AgentVisualizer*>::iterator i = m_agentVisualizers.begin(); i != m_agentVisualizers.end(); i++) {
+        AgentVisualizer* vis = (*i);
+        delete vis;
+    }
+    m_agentVisualizers.clear();
+
+    double rangeX = m_maxX - m_minX;
+    double rangeY = m_maxY - m_minY;
+
+    qreal minWidth = m_view->mapToScene(0, 0).x();
+    qreal minHeight = m_view->mapToScene(0, 0).y();
+    qreal maxWidth =m_view->mapToScene(m_view->width(), m_view->width()).x();
+    qreal maxHeight = m_view->mapToScene(m_view->height(), m_view->height()).x();
+
+    double yMidline = m_view->sceneRect().height() / 2;
+
+    for (unsigned int i = 0; i < clusters->size(); i++) {
+        Cluster* cluster = (*clusters)[i];
+        int r = rand() % 255;
+        int g = rand() % 255;
+        int b = rand() % 255;
+        QColor color = QColor(r, g, b);
+
+        for (unsigned int j = 0; j < cluster->points.size(); j++) {
+            QGraphicsEllipseItemObject* item = new QGraphicsEllipseItemObject(0);
+            ClusterItem* clusterItem = cluster->points[j];
+            double pX = ((maxWidth - minWidth) * (clusterItem->x - m_minX)) / (rangeX) + minWidth;
+            double pY = ((maxHeight - minHeight) * (clusterItem->y - m_minY)) / (rangeY) + minHeight;
+            pY -= 2 * (pY - yMidline);
+
+            pX -= (DATAPOINT_SIZE / 2);
+            pY -= (DATAPOINT_SIZE / 2);
+            item->setRect(QRectF(pX, pY, DATAPOINT_SIZE, DATAPOINT_SIZE));
+            item->setBrush(QBrush(color));
+            item->setPen(QPen(color));
+            m_scene->addItem(item);
+            item->show();
+            m_dataItems.push_back(item);
+        }
+    }
+
+
+    QFile file("../AgentCluster/test_data/cluster_results.csv");
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream stream(&file);
+        for (unsigned int i = 0; i < clusters->size(); i++) {
+            Cluster* cluster = (*clusters)[i];
+            for (unsigned int j = 0; j < cluster->points.size(); j++) {
+                ClusterItem* item = cluster->points[j];
+                stream << item->x << "," << item->y << "," << item->group << "\n";
+            }
+        }
+        file.close();
+    }
 }

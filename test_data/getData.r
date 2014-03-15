@@ -21,5 +21,5 @@ pointList = append(pointList, yPos)
 
 pointMatrix = matrix(pointList, ncol=2)
 
-#plot(xPos, yPos, xlim=c(0,xBound), ylim=c(0,yBound))
+plot(xPos, yPos)
 write.csv(pointMatrix, "artificialData.csv", row.names=FALSE)
