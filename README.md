@@ -13,7 +13,7 @@ It also contains an implementation of Foraging Agent Swarm Clustering (FASC), an
 
 ### Usage
 
-    Usage: AgentSwarm [options] <data.csv>
+    Usage: FASO [options] <data.csv>
 
 Options
 

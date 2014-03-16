@@ -7,7 +7,7 @@
 QT       += core gui widgets
 
 
-TARGET = AgentCluster
+TARGET = FASO
 CONFIG   += console
 CONFIG   -= app_bundle
 
