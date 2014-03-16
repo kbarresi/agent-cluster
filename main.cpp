@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
         AgentCluster *cluster = new AgentCluster(iterations, swarmSize, 0);
         cluster->moveToThread(workThread);
         QObject::connect(workThread, SIGNAL(started()), cluster, SLOT(start()));
-        QObject::connect(cluster, SIGNAL(update(std::vector<ClusterItem*>*,std::vector<Agent*>*)), canvas, SLOT(updateDisplay(std::vector<ClusterItem*>*,std::vector<Agent*>*)));
+        //QObject::connect(cluster, SIGNAL(update(std::vector<ClusterItem*>*,std::vector<Agent*>*)), canvas, SLOT(updateDisplay(std::vector<ClusterItem*>*,std::vector<Agent*>*)));
         QObject::connect(cluster, SIGNAL(setClusters(std::vector<Cluster*>*)), canvas, SLOT(setClusters(std::vector<Cluster*>*)));
         if (!cluster->loadData(dataFile)) {
             printf("Error: unable to open data file: %s\n\n", dataFile.c_str());

@@ -66,7 +66,7 @@ struct Cluster {
 /* The swarm size compared to the data set size. For example, a value of 0.5 means that the swarm
  * size will be half of the size of the given data set.
  */
-static const double SWARM_SIZE_FACTOR = 1;
+static const double SWARM_SIZE_FACTOR = 0.5;
 
 /* The ratio of the average datapoint-to-datapoint distance to agent sensor range.
  */
@@ -97,11 +97,11 @@ static const int CANVAS_SIZE = 800;
 static const int AGENT_SIZE = 10;
 static const int DATAPOINT_SIZE = 10;
 static const int DEFAULT_SWARM_SIZE = 50;
-static const int MOVEMENT_DELAY = 100;         //in milliseconds
+static const int MOVEMENT_DELAY = 0;         //in milliseconds
 static const int UPDATE_RATE = 5; //update display every x iterations
-static const bool ANIMATED = true;
-static const bool SHOW_DATA = true;
-static const bool SHOW_FORAGE_RANGE = true;
+static const bool ANIMATED = false;
+static const bool SHOW_DATA = false;
+static const bool SHOW_FORAGE_RANGE = false;
 static const bool SHOW_CROWDING_RANGE = false;
 static const bool SHOW_PATH = false;
 
